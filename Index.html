@@ -2,13 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Registre Mondial Complet</title>
+    <title>OpenFront 1918 - 15 Secondes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --blue: #00d4ff; --dark: #050505; --gold: #ffd700; }
-        body { margin: 0; background: #aad3df; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; }
+        :root { --blue: #00d4ff; --dark: #050505; --red: #ff3131; --gold: #ffd700; }
+        body { margin: 0; background: #aad3df; font-family: 'Courier New', monospace; overflow: hidden; }
         
-        /* BANDEAU DE COMMANDEMENT */
         #info-header {
             position: absolute; top: 0; left: 0; right: 0; height: 110px;
             background: var(--dark); color: white; z-index: 1000;
@@ -16,46 +15,54 @@
             border-bottom: 5px solid var(--blue); padding: 0 40px;
         }
 
-        /* BLOC IDENTITÉ : DRAPEAU + NOM */
-        .identity-card { display: flex; align-items: center; gap: 25px; }
-        .flag-container {
-            width: 100px; height: 60px; border: 2px solid #333;
-            background: #1a1a1a; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 10px rgba(0,212,255,0.2);
-        }
-        #country-flag { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        #country-name {
-            font-size: 2.2em; font-weight: 900; text-transform: uppercase;
-            letter-spacing: 2px; color: #fff; text-shadow: 2px 2px 0px #000;
+        /* CHRONO */
+        #timer-container { text-align: center; min-width: 120px; }
+        #timer { font-size: 2.5em; font-weight: bold; color: var(--red); }
+        .timer-label { font-size: 0.6em; color: #888; text-transform: uppercase; }
+
+        .identity { display: flex; align-items: center; gap: 20px; flex-grow: 1; margin-left: 30px; }
+        .flag-box { width: 80px; height: 50px; border: 1px solid #444; background: #111; }
+        #flag-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #name { font-size: 1.8em; font-weight: bold; text-transform: uppercase; }
+
+        #btn-slot { min-width: 200px; text-align: right; }
+        .btn-activate {
+            background: var(--blue); color: black; border: none;
+            padding: 15px 25px; font-weight: bold; cursor: pointer; text-transform: uppercase;
         }
 
-        /* ACTIONS */
-        #action-zone { text-align: right; min-width: 250px; }
-        .btn-hq {
-            background: var(--blue); color: #000; border: none;
-            padding: 15px 30px; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; font-size: 1.1em;
+        /* GAME OVER OVERLAY */
+        #game-over {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(139, 0, 0, 0.9); color: white;
+            display: none; flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 9999;
         }
-        .status-msg { color: var(--blue); font-family: monospace; font-size: 0.9em; margin-bottom: 5px; }
+        #game-over h1 { font-size: 5em; margin: 0; }
 
         #map { height: calc(100vh - 110px); width: 100vw; margin-top: 110px; }
     </style>
 </head>
 <body>
 
+<div id="game-over">
+    <h1>GAME OVER</h1>
+    <p>DÉLAI DE DÉPLOIEMENT EXPIRÉ</p>
+    <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">RÉESSAYER</button>
+</div>
+
 <div id="info-header">
-    <div class="identity-card">
-        <div class="flag-container">
-            <img id="country-flag" src="" alt="">
-        </div>
-        <div id="country-name">SCANNER UN TERRITOIRE</div>
+    <div id="timer-container">
+        <span class="timer-label">Temps Restant</span>
+        <div id="timer">15</div>
     </div>
 
-    <div id="action-zone">
-        <div id="status" class="status-msg">SYSTÈME PRÊT</div>
-        <div id="btn-slot"></div>
+    <div class="identity">
+        <div class="flag-box"><img id="flag-img" src=""></div>
+        <div id="name">SÉLECTIONNEZ VOTRE QG</div>
     </div>
+
+    <div id="btn-slot"></div>
 </div>
 
 <div id="map"></div>
@@ -63,77 +70,63 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const map = L.map('map', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
-    
-    // Couche sans aucun texte (Mers, Pays, Villes masqués)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
     let hqLocked = false;
-    let activeLayer = null;
+    let selectedLayer = null;
+    let timeLeft = 15;
 
-    // Éléments UI
-    const flagImg = document.getElementById('country-flag');
-    const nameTxt = document.getElementById('country-name');
-    const btnSlot = document.getElementById('btn-slot');
-    const statusTxt = document.getElementById('status');
+    // Lancement du compte à rebours
+    const countdown = setInterval(() => {
+        if (hqLocked) {
+            clearInterval(countdown);
+            document.getElementById('timer').style.color = "var(--gold)";
+            return;
+        }
+        
+        timeLeft--;
+        document.getElementById('timer').innerText = timeLeft;
 
-    // Chargement de la base mondiale (Admin 0 - Pays)
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            document.getElementById('game-over').style.display = 'flex';
+        }
+    }, 1000);
+
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(res => res.json())
     .then(data => {
         L.geoJson(data, {
-            style: { fillColor: '#cccccc', fillOpacity: 1, color: '#333', weight: 1.5 },
+            style: { fillColor: '#ccc', fillOpacity: 1, color: '#333', weight: 1.5 },
             onEachFeature: (feature, layer) => {
                 layer.on('click', (e) => {
-                    L.DomEvent.stopPropagation(e);
+                    if (hqLocked || timeLeft <= 0) return;
                     
+                    selectedLayer = layer;
                     const props = feature.properties;
-                    const name = props.ADMIN || props.name;
                     const iso = (props.ISO_A2 || "").toLowerCase();
-
-                    // Mise à jour immédiate de l'identité
-                    nameTxt.innerText = name;
                     
+                    document.getElementById('name').innerText = props.ADMIN;
+                    const flag = document.getElementById('flag-img');
                     if (iso && iso !== "-99") {
-                        flagImg.src = `https://flagcdn.com/w160/${iso}.png`;
-                        flagImg.style.display = "block";
-                    } else {
-                        flagImg.style.display = "none";
+                        flag.src = `https://flagcdn.com/w160/${iso}.png`;
+                        flag.style.display = "block";
                     }
 
-                    // Gestion du verrouillage QG
-                    if (!hqLocked) {
-                        activeLayer = layer;
-                        statusTxt.innerText = "COORDINATION DISPONIBLE";
-                        btnSlot.innerHTML = `<button class="btn-hq" onclick="setFinalHQ()">ACTIVER QG</button>`;
-                    } else {
-                        statusTxt.innerText = (name === playerHQ) ? "VOTRE QG" : "TERRITOIRE ÉTRANGER";
-                    }
+                    document.getElementById('btn-slot').innerHTML = 
+                        `<button class="btn-activate" onclick="confirmHQ()">ACTIVER QG</button>`;
                 });
             }
         }).addTo(map);
     });
 
-    let playerHQ = "";
-
-    window.setFinalHQ = function() {
-        if (hqLocked || !activeLayer) return;
-
+    window.confirmHQ = function() {
+        if (!selectedLayer || timeLeft <= 0) return;
         hqLocked = true;
-        playerHQ = nameTxt.innerText;
-
-        // Coloration unique du QG
-        activeLayer.setStyle({
-            fillColor: '#00d4ff',
-            color: '#ffd700',
-            weight: 6,
-            fillOpacity: 1
-        });
-
-        statusTxt.innerText = "COMMANDEMENT DÉPLOYÉ";
-        statusTxt.style.color = "var(--gold)";
-        btnSlot.innerHTML = `<b style="color:var(--blue)">SÉCURISÉ</b>`;
-        
-        map.fitBounds(activeLayer.getBounds());
+        selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 6 });
+        document.getElementById('timer').innerText = "OK";
+        document.getElementById('btn-slot').innerHTML = `<b style="color:var(--blue)">VERROUILLÉ</b>`;
+        map.fitBounds(selectedLayer.getBounds());
     };
 </script>
 </body>
