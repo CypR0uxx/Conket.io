@@ -2,21 +2,18 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Système Intégral</title>
+    <title>OpenFront 1918 - Interface Tactique Finale</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700;
             --bg: #111; --header-bg: #000; --text: #fff; --map-bg: #000; --border: #333; --panel: #1a1a1a;
         }
-
         .light-theme {
             --bg: #f5f5f5; --header-bg: #ffffff; --text: #111; --map-bg: #e0e0e0; --border: #ccc; --panel: #fff;
         }
-
         body { margin: 0; background: var(--bg); font-family: 'Arial Black', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
         
-        /* BANDEAU SUPÉRIEUR */
         #info-header {
             width: 95%; max-width: 1300px; height: 110px;
             background: var(--header-bg); color: var(--text); z-index: 1000;
@@ -24,65 +21,42 @@
             border-bottom: 5px solid var(--blue); padding: 0 30px;
             margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
         #timer-box { text-align: center; border-right: 2px solid var(--border); padding-right: 20px; min-width: 90px; }
         #timer { font-size: 2.8em; color: var(--red); font-weight: bold; line-height: 1; }
-
         .identity { display: flex; align-items: center; gap: 20px; flex-grow: 1; padding-left: 20px; }
         .flag-frame { width: 90px; height: 60px; border: 2px solid var(--blue); background: #000; overflow: hidden; }
         #flag-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         #country-name { font-size: 1.8em; font-weight: 900; text-transform: uppercase; color: var(--text); }
-
         #action-zone { display: flex; align-items: center; gap: 15px; }
         .btn-activate { background: var(--blue); color: #000; border: none; padding: 15px 25px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-theme { background: var(--border); color: var(--text); border: none; padding: 10px; cursor: pointer; font-size: 0.8em; text-transform: uppercase; border-radius: 4px; }
-
-        /* CONTENEUR PRINCIPAL */
-        #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; gap: 0; position: relative; }
         
-        /* MENU LATÉRAL FERMABLE */
-        #side-menu {
-            width: 0; background: var(--panel); border: 0 solid var(--border);
-            overflow: hidden; transition: 0.4s ease; color: var(--text);
-            display: flex; flex-direction: column; align-items: center; position: relative;
-        }
+        #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; gap: 0; position: relative; }
+        #side-menu { width: 0; background: var(--panel); border: 0 solid var(--border); overflow: hidden; transition: 0.4s ease; color: var(--text); display: flex; flex-direction: column; align-items: center; position: relative; }
         #side-menu.active { width: 280px; border: 2px solid var(--blue); padding: 20px; }
-
-        /* BOUTON FLÈCHE */
-        #toggle-side {
-            position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-            background: var(--blue); color: black; border: none; width: 30px; height: 60px;
-            cursor: pointer; display: none; z-index: 2000; align-items: center; justify-content: center;
-            clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%); font-weight: bold;
-        }
-
+        #toggle-side { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); color: black; border: none; width: 30px; height: 60px; cursor: pointer; display: none; z-index: 2000; align-items: center; justify-content: center; clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%); font-weight: bold; }
+        
         #map-container { flex-grow: 1; border: 2px solid var(--border); background: var(--map-bg); position: relative; }
         #map { width: 100%; height: 100%; background: var(--map-bg) !important; }
-
         .province-name { font-size: 1.4em; border-bottom: 2px solid var(--gold); padding-bottom: 10px; width: 100%; text-align: center; margin-top: 20px; }
-
-        #game-over {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(50, 0, 0, 0.98); color: white;
-            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
-        }
+        #game-over { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(50, 0, 0, 0.98); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
     </style>
 </head>
 <body>
 
 <div id="game-over">
-    <h1>MISSION ÉCHOUÉE</h1>
-    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer;">REESSAYER</button>
+    <h1>TEMPS ÉCOULÉ</h1>
+    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer;">RECOMMENCER</button>
 </div>
 
 <div id="info-header">
     <div id="timer-box">
         <div id="timer">15</div>
-        <button class="btn-theme" onclick="toggleTheme()">Mode</button>
+        <button class="btn-theme" onclick="toggleTheme()">Thème</button>
     </div>
     <div class="identity">
         <div class="flag-frame"><img id="flag-img" src=""></div>
-        <div id="country-name">SCANNER LE MONDE</div>
+        <div id="country-name">SCAN EN COURS...</div>
     </div>
     <div id="action-zone"></div>
 </div>
@@ -90,9 +64,9 @@
 <div id="main-container">
     <button id="toggle-side" onclick="toggleSideMenu()">></button>
     <div id="side-menu">
-        <span style="color: var(--blue); font-size: 0.7em;">UNITÉ DE COMMANDE</span>
+        <span style="color: var(--blue); font-size: 0.7em;">ÉTAT-MAJOR</span>
         <div id="menu-province-name" class="province-name">---</div>
-        <p style="margin-top: 40px; font-size: 0.8em; color: var(--gold);">PROVINCE SÉCURISÉE</p>
+        <p style="margin-top: 40px; font-size: 0.8em; color: var(--gold);">ZONE SOUS CONTRÔLE</p>
     </div>
     <div id="map-container">
         <div id="map"></div>
@@ -101,7 +75,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    const translateFR = new Intl.DisplayNames(['fr'], { type: 'region' });
     const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+    
     const map = L.map('map', { 
         zoomControl: true, attributionControl: false, minZoom: 2,
         maxBounds: worldBounds, maxBoundsViscosity: 1.0 
@@ -142,23 +118,53 @@
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(res => res.json())
     .then(data => {
+        nameEl.innerText = "CHOISISSEZ UN TERRITOIRE";
         L.geoJson(data, {
             style: { fillColor: '#555', fillOpacity: 0.5, color: '#888', weight: 1 },
             onEachFeature: (feature, layer) => {
+                
+                // --- EFFET DE SURVOL (HOVER) ---
+                layer.on('mouseover', function (e) {
+                    if (!hqLocked || (hqLocked && feature.properties.name !== hqCountryName)) {
+                        this.setStyle({ fillOpacity: 0.8, fillColor: '#777' });
+                    }
+                });
+
+                layer.on('mouseout', function (e) {
+                    if (this !== selectedLayer || !hqLocked) {
+                        this.setStyle({ fillOpacity: 0.5, fillColor: '#555' });
+                    }
+                });
+
+                // --- CLIC ---
                 layer.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     const props = feature.properties;
-                    const name = props.ADMIN || props.name;
-                    const iso = (props.ISO_A2 || props.iso_a2 || "").toLowerCase();
+                    const iso = (props.ISO_A2 || props.iso_a2 || "").toUpperCase();
+                    
+                    let nameFR;
+                    try {
+                        nameFR = iso ? translateFR.of(iso) : props.ADMIN;
+                    } catch (err) {
+                        nameFR = props.ADMIN || props.name;
+                    }
 
-                    nameEl.innerText = name;
+                    nameEl.innerText = nameFR;
                     if (iso && iso !== "-99") {
-                        flagEl.src = `https://flagcdn.com/w160/${iso}.png`;
+                        flagEl.src = `https://flagcdn.com/w160/${iso.toLowerCase()}.png`;
                         flagEl.style.display = "block";
                     }
 
+                    if (hqLocked && nameFR === hqCountryName) {
+                        toggleSideMenu(true);
+                    }
+
                     if (!hqLocked) {
+                        if (selectedLayer) { 
+                            selectedLayer.setStyle({ fillColor: '#555', fillOpacity: 0.5 }); 
+                        }
                         selectedLayer = layer;
+                        layer.setStyle({ fillColor: '#999', fillOpacity: 0.7 });
                         actionEl.innerHTML = `<button class="btn-activate" onclick="confirmHQ()">ACTIVER QG</button>`;
                     }
                 });
@@ -175,9 +181,8 @@
         selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 4, fillOpacity: 1 });
         timerEl.innerText = "OK";
         timerEl.style.color = "var(--gold)";
-        actionEl.innerHTML = `<b style="color:var(--blue)">QG VALIDE</b>`;
+        actionEl.innerHTML = `<b style="color:var(--blue)">DÉPLOYÉ</b>`;
         
-        // Afficher le menu et la flèche
         toggleSideMenu(true);
         toggleBtn.style.display = 'flex';
         menuProvince.innerText = hqCountryName;
