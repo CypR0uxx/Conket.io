@@ -79,21 +79,21 @@
 <div id="main-view">
     <div id="side-menu">
         <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.9em;">STRATEGIC CARDS</h3>
+            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.9em; font-family: 'Arial Black';">STRATEGIC CARDS</h3>
             <div class="cards-container">
                 <div class="strat-card"><div class="card-icon">🎖️</div>REINFORCEMENTS</div>
                 <div class="strat-card"><div class="card-icon">🚜</div>INDUSTRIAL BOOST</div>
                 <div class="strat-card"><div class="card-icon">📡</div>ESPIONAGE</div>
             </div>
 
-            <h3 style="color: var(--gold); border-bottom: 1px solid var(--gold); font-size: 0.9em; margin-top: 25px;">ECONOMY</h3>
+            <h3 style="color: var(--gold); border-bottom: 1px solid var(--gold); font-size: 0.9em; margin-top: 25px; font-family: 'Arial Black';">ECONOMY</h3>
             <div class="res-item" style="margin-top:15px;">
                 <div style="display:flex; justify-content:space-between; font-size:0.8em;"><span>⚙️ IRON</span><span id="val-iron">70</span></div>
                 <div class="res-bar"><div id="fill-iron" class="res-fill" style="width: 70%;"></div></div>
             </div>
 
             <div class="pop-section" style="margin-top:25px; background:#000; padding:10px; border:1px solid var(--border);">
-                <div style="font-size: 0.7em; color: var(--blue);">POPULATION DISTRIBUTION</div>
+                <div style="font-size: 0.7em; color: var(--blue); font-family: 'Arial Black';">POPULATION DISTRIBUTION</div>
                 <div style="display:flex; height:15px; border:1px solid #444; margin:10px 0;">
                     <div id="bar-w" style="width: 70%; background:var(--blue);"></div>
                     <div id="bar-s" style="width: 30%; background:var(--red);"></div>
@@ -135,14 +135,11 @@
         L.geoJson(data, {
             style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
             onEachFeature: (feature, layer) => {
-                // CHANGER COULEUR CURSEUR AU SURVOL
                 layer.on('mouseover', function() {
-                    const mapDiv = document.getElementById('map');
-                    mapDiv.classList.add('target-hover');
+                    document.getElementById('map').classList.add('target-hover');
                 });
                 layer.on('mouseout', function() {
-                    const mapDiv = document.getElementById('map');
-                    mapDiv.classList.remove('target-hover');
+                    document.getElementById('map').classList.remove('target-hover');
                 });
 
                 layer.on('click', () => {
