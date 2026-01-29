@@ -10,12 +10,10 @@
             --bg: #0a0a0a; --header-bg: #000; --panel: #141414; --border: #333;
         }
         
-        /* CURSEUR PAR DÉFAUT (BLEU) */
         *, .leaflet-container {
             cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='%2300d4ff' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='%2300d4ff' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='%2300d4ff' stroke-width='1'/></svg>") 16 16, crosshair !important;
         }
 
-        /* CURSEUR SURVOL PAYS (ROUGE) */
         .target-hover, .target-hover * {
             cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='%23ff3131' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='%23ff3131' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='%23ff3131' stroke-width='1'/></svg>") 16 16, crosshair !important;
         }
@@ -28,7 +26,6 @@
         }
 
         #timer { font-size: 2.2em; color: var(--red); font-weight: bold; margin-right: 20px; }
-
         .flag-frame { width: 70px; height: 45px; border: 1px solid var(--blue); background: #111; overflow: hidden; flex-shrink: 0; }
         #flag-img { width: 100%; height: 100%; object-fit: cover; display: none; }
 
@@ -39,27 +36,23 @@
             transition: 0.3s ease-in-out; border-right: 0px solid var(--blue); z-index: 1500;
         }
         #side-menu.active { width: 340px; border-right: 2px solid var(--blue); }
-        
         .menu-content { width: 340px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        .cards-container { display: flex; gap: 10px; margin-top: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .strat-card { 
-            min-width: 85px; height: 110px; background: #222; border: 1px solid var(--blue); 
-            border-radius: 5px; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; font-size: 0.55em; text-align: center; padding: 5px; transition: 0.2s;
-        }
-        .strat-card:hover { background: var(--blue); color: black; transform: translateY(-5px); }
+        /* ARGENT */
+        .money-box { background: #000; padding: 15px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        
+        /* RESSOURCES */
+        .res-item { margin: 12px 0; font-size: 0.75em; }
+        .res-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .res-bar { width: 100%; height: 8px; background: #222; border-radius: 2px; overflow: hidden; }
+        .res-fill { height: 100%; background: var(--blue); }
 
-        .res-item { margin: 10px 0; font-size: 0.75em; }
-        .res-bar { width: 100%; height: 6px; background: #222; margin-top: 4px; border-radius: 2px; }
-        .res-fill { height: 100%; background: var(--blue); transition: 0.4s; }
+        /* POPULATION */
+        .pop-section { margin-top: 25px; background: #000; padding: 15px; border: 1px solid var(--border); }
+        .ratio-container { display:flex; height:20px; border:1px solid #444; margin:10px 0; font-size: 0.6em; align-items: center; justify-content: center; overflow: hidden; }
 
-        #toggle-btn { 
-            position: absolute; left: 0; top: 50%; width: 25px; height: 60px; 
-            background: var(--blue); border: none; z-index: 1600; display: none; transform: translateY(-50%);
-        }
-
+        #toggle-btn { position: absolute; left: 0; top: 50%; width: 25px; height: 60px; background: var(--blue); border: none; z-index: 1600; display: none; transform: translateY(-50%); }
         #map { flex-grow: 1; background: #000 !important; z-index: 1; }
     </style>
 </head>
@@ -69,7 +62,7 @@
     <div id="timer">15</div>
     <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1;">
         <div class="flag-frame"><img id="flag-img" src=""></div>
-        <div id="country-name" style="font-size: 1.2em; text-transform: uppercase;">EN ATTENTE DE SÉLECTION</div>
+        <div id="country-name" style="font-size: 1.2em; text-transform: uppercase;">SCAN EN COURS...</div>
     </div>
     <div id="action-zone"></div>
 </header>
@@ -77,27 +70,45 @@
 <div id="main-view">
     <div id="side-menu">
         <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.9em;">CARTES STRATÉGIQUES</h3>
-            <div class="cards-container">
-                <div class="strat-card"><div style="font-size:1.5em">🎖️</div>RENFORTS</div>
-                <div class="strat-card"><div style="font-size:1.5em">🚜</div>INDUSTRIE</div>
-                <div class="strat-card"><div style="font-size:1.5em">📡</div>ESPIONNAGE</div>
+            <div class="money-box">
+                <span style="font-size: 2em;">💰</span>
+                <div style="text-align: left;">
+                    <div style="font-size: 0.6em; color: var(--gold);">RÉSERVES TRÉSORERIE</div>
+                    <div id="money-val" style="font-size: 1.3em;">1,240,500 $</div>
+                </div>
             </div>
 
-            <h3 style="color: var(--gold); border-bottom: 1px solid var(--gold); font-size: 0.9em; margin-top: 20px;">RESSOURCES</h3>
-            <div class="res-item"><span>⚙️ FER</span><div class="res-bar"><div id="fill-iron" class="res-fill" style="width: 70%;"></div></div></div>
-            <div class="res-item"><span>🧱 PIERRE</span><div class="res-bar"><div id="fill-stone" class="res-fill" style="width: 50%;"></div></div></div>
-            <div class="res-item"><span>🛢️ PÉTROLE</span><div class="res-bar"><div id="fill-oil" class="res-fill" style="width: 30%; background:var(--red);"></div></div></div>
-            <div class="res-item"><span>🌾 BLÉ</span><div class="res-bar"><div id="fill-wheat" class="res-fill" style="width: 80%;"></div></div></div>
-            <div class="res-item"><span>🪵 BOIS</span><div class="res-bar"><div id="fill-wood" class="res-fill" style="width: 60%;"></div></div></div>
+            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.8em; margin-bottom: 15px;">STOCKS RESSOURCES</h3>
+            
+            <div class="res-item">
+                <div class="res-header"><span>⚙️ FER</span><span id="txt-iron">700</span></div>
+                <div class="res-bar"><div id="fill-iron" class="res-fill" style="width: 70%;"></div></div>
+            </div>
+            <div class="res-item">
+                <div class="res-header"><span>🧱 PIERRE</span><span id="txt-stone">450</span></div>
+                <div class="res-bar"><div id="fill-stone" class="res-fill" style="width: 45%;"></div></div>
+            </div>
+            <div class="res-item">
+                <div class="res-header"><span>🛢️ PÉTROLE</span><span id="txt-oil">200</span></div>
+                <div class="res-bar"><div id="fill-oil" class="res-fill" style="width: 20%; background:var(--red);"></div></div>
+            </div>
+            <div class="res-item">
+                <div class="res-header"><span>🌾 BLÉ</span><span id="txt-wheat">800</span></div>
+                <div class="res-bar"><div id="fill-wheat" class="res-fill" style="width: 80%;"></div></div>
+            </div>
+            <div class="res-item">
+                <div class="res-header"><span>🪵 BOIS</span><span id="txt-wood">500</span></div>
+                <div class="res-bar"><div id="fill-wood" class="res-fill" style="width: 50%;"></div></div>
+            </div>
 
-            <div class="pop-section" style="margin-top:20px; background:#000; padding:10px; border:1px solid var(--border);">
-                <div style="font-size: 0.6em; color: var(--blue);">RÉPARTITION POPULATION</div>
-                <div style="display:flex; height:12px; border:1px solid #444; margin:10px 0;">
-                    <div id="bar-w" style="width: 70%; background:var(--blue);"></div>
-                    <div id="bar-s" style="width: 30%; background:var(--red);"></div>
+            <div class="pop-section">
+                <div style="font-size: 0.6em; color: var(--blue);">MOBILISATION POPULATION</div>
+                <div class="ratio-container">
+                    <div id="bar-w" style="width: 70%; background:var(--blue); height:100%; display:flex; align-items:center; justify-content:center;">OUVRIERS</div>
+                    <div id="bar-s" style="width: 30%; background:var(--red); height:100%; display:flex; align-items:center; justify-content:center;">SOLDATS</div>
                 </div>
-                <input type="range" min="5" max="95" value="30" style="width: 100%;" oninput="syncStats(this.value)">
+                <input type="range" min="1" max="100" value="30" style="width: 100%; cursor: pointer;" oninput="updatePop(this.value)">
+                <div id="mob-val" style="font-size: 0.6em; text-align: center; margin-top: 5px; color: var(--red);">MOBILISATION : 30%</div>
             </div>
         </div>
     </div>
@@ -112,15 +123,11 @@
 
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
 
-    function syncStats(val) {
-        const workers = 100 - val;
+    // Seul le ratio population glisse
+    function updatePop(val) {
         document.getElementById('bar-s').style.width = val + "%";
-        document.getElementById('bar-w').style.width = workers + "%";
-        document.getElementById('fill-iron').style.width = (workers * 0.8) + "%";
-        document.getElementById('fill-wheat').style.width = (workers * 0.9) + "%";
-        document.getElementById('fill-stone').style.width = (workers * 0.7) + "%";
-        document.getElementById('fill-oil').style.width = (workers * 0.4) + "%";
-        document.getElementById('fill-wood').style.width = (workers * 0.6) + "%";
+        document.getElementById('bar-w').style.width = (100 - val) + "%";
+        document.getElementById('mob-val').innerText = "MOBILISATION : " + val + "%";
     }
 
     const timerInterval = setInterval(() => {
@@ -137,19 +144,19 @@
             style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
             onEachFeature: (feature, layer) => {
                 layer.on({
-                    mouseover: function(e) {
+                    mouseover: function() {
                         if (!hqLocked) {
                             this.setStyle({ fillColor: '#ffffff', fillOpacity: 0.3 });
                             document.body.classList.add('target-hover');
                         }
                     },
-                    mouseout: function(e) {
+                    mouseout: function() {
                         if (!hqLocked && this !== selectedLayer) {
                             this.setStyle({ fillColor: '#222', fillOpacity: 0.7 });
                         }
                         document.body.classList.remove('target-hover');
                     },
-                    click: function(e) {
+                    click: function() {
                         if(hqLocked) return;
                         if(selectedLayer) selectedLayer.setStyle({fillColor: '#222'});
                         selectedLayer = this;
