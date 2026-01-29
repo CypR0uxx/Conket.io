@@ -2,61 +2,90 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Interface Tactique Finale</title>
+    <title>OpenFront 1918 - Opérations Tactiques</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700;
             --bg: #111; --header-bg: #000; --text: #fff; --map-bg: #000; --border: #333; --panel: #1a1a1a;
+            --cursor: var(--blue);
         }
         .light-theme {
             --bg: #f5f5f5; --header-bg: #ffffff; --text: #111; --map-bg: #e0e0e0; --border: #ccc; --panel: #fff;
+            --cursor: #000;
         }
-        body { margin: 0; background: var(--bg); font-family: 'Arial Black', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
-        
+
+        /* CURSEUR CIBLE PERSONNALISÉ */
+        body { 
+            margin: 0; background: var(--bg); font-family: 'Arial Black', sans-serif; 
+            overflow: hidden; display: flex; flex-direction: column; align-items: center; 
+            transition: 0.3s;
+            cursor: crosshair; /* Fallback */
+        }
+
+        /* Style de la cible sur toute la zone de jeu */
+        #main-container, #info-header {
+            cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='%2300d4ff' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='%2300d4ff' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='%2300d4ff' stroke-width='1'/></svg>") 16 16, crosshair;
+        }
+
+        .light-theme #main-container, .light-theme #info-header {
+            cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='black' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='black' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='black' stroke-width='1'/></svg>") 16 16, crosshair;
+        }
+
+        /* BANDEAU SUPÉRIEUR */
         #info-header {
             width: 95%; max-width: 1300px; height: 110px;
             background: var(--header-bg); color: var(--text); z-index: 1000;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 5px solid var(--blue); padding: 0 30px;
-            margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-bottom: 5px solid var(--blue); padding: 0 30px; margin-top: 10px;
         }
-        #timer-box { text-align: center; border-right: 2px solid var(--border); padding-right: 20px; min-width: 90px; }
-        #timer { font-size: 2.8em; color: var(--red); font-weight: bold; line-height: 1; }
+        #timer { font-size: 2.8em; color: var(--red); font-weight: bold; }
+        
         .identity { display: flex; align-items: center; gap: 20px; flex-grow: 1; padding-left: 20px; }
-        .flag-frame { width: 90px; height: 60px; border: 2px solid var(--blue); background: #000; overflow: hidden; }
-        #flag-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .flag-frame { width: 90px; height: 60px; border: 2px solid var(--blue); background: #222; overflow: hidden; }
+        
+        /* ANIMATION DU DRAPEAU */
+        #flag-img { 
+            width: 100%; height: 100%; object-fit: cover; display: none; 
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         #country-name { font-size: 1.8em; font-weight: 900; text-transform: uppercase; color: var(--text); }
-        #action-zone { display: flex; align-items: center; gap: 15px; }
-        .btn-activate { background: var(--blue); color: #000; border: none; padding: 15px 25px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-theme { background: var(--border); color: var(--text); border: none; padding: 10px; cursor: pointer; font-size: 0.8em; text-transform: uppercase; border-radius: 4px; }
-        
-        #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; gap: 0; position: relative; }
-        #side-menu { width: 0; background: var(--panel); border: 0 solid var(--border); overflow: hidden; transition: 0.4s ease; color: var(--text); display: flex; flex-direction: column; align-items: center; position: relative; }
+        .btn-activate { background: var(--blue); color: #000; border: none; padding: 15px 25px; font-weight: bold; cursor: pointer; }
+
+        /* CONTENEUR */
+        #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; position: relative; }
+        #side-menu { width: 0; background: var(--panel); overflow: hidden; transition: 0.4s ease; color: var(--text); display: flex; flex-direction: column; align-items: center; }
         #side-menu.active { width: 280px; border: 2px solid var(--blue); padding: 20px; }
-        #toggle-side { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); color: black; border: none; width: 30px; height: 60px; cursor: pointer; display: none; z-index: 2000; align-items: center; justify-content: center; clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%); font-weight: bold; }
         
-        #map-container { flex-grow: 1; border: 2px solid var(--border); background: var(--map-bg); position: relative; }
-        #map { width: 100%; height: 100%; background: var(--map-bg) !important; }
-        .province-name { font-size: 1.4em; border-bottom: 2px solid var(--gold); padding-bottom: 10px; width: 100%; text-align: center; margin-top: 20px; }
-        #game-over { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(50, 0, 0, 0.98); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        #toggle-side { 
+            position: absolute; left: 0; top: 50%; transform: translateY(-50%); 
+            background: var(--blue); border: none; width: 30px; height: 60px; 
+            cursor: pointer; display: none; z-index: 2000; 
+        }
+
+        #map-container { flex-grow: 1; border: 2px solid var(--border); background: var(--map-bg); }
+        #map { width: 100%; height: 100%; }
+        
+        #game-over { position: fixed; inset: 0; background: rgba(50, 0, 0, 0.98); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
     </style>
 </head>
 <body>
 
 <div id="game-over">
-    <h1>TEMPS ÉCOULÉ</h1>
-    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer;">RECOMMENCER</button>
+    <h1>SYSTÈME VERROUILLÉ</h1>
+    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer;">RECONNEXION</button>
 </div>
 
 <div id="info-header">
     <div id="timer-box">
         <div id="timer">15</div>
-        <button class="btn-theme" onclick="toggleTheme()">Thème</button>
+        <button onclick="toggleTheme()" style="font-size: 0.7em; cursor:pointer;">MODE</button>
     </div>
     <div class="identity">
         <div class="flag-frame"><img id="flag-img" src=""></div>
-        <div id="country-name">SCAN EN COURS...</div>
+        <div id="country-name">SCAN EN ATTENTE</div>
     </div>
     <div id="action-zone"></div>
 </div>
@@ -64,9 +93,8 @@
 <div id="main-container">
     <button id="toggle-side" onclick="toggleSideMenu()">></button>
     <div id="side-menu">
-        <span style="color: var(--blue); font-size: 0.7em;">ÉTAT-MAJOR</span>
-        <div id="menu-province-name" class="province-name">---</div>
-        <p style="margin-top: 40px; font-size: 0.8em; color: var(--gold);">ZONE SOUS CONTRÔLE</p>
+        <span style="color: var(--blue); font-size: 0.7em;">COORDONNÉES QG</span>
+        <div id="menu-province-name" style="font-size: 1.4em; border-bottom: 2px solid var(--gold); margin-top: 10px;">---</div>
     </div>
     <div id="map-container">
         <div id="map"></div>
@@ -92,79 +120,45 @@
         currentTileLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, { noWrap: true, bounds: worldBounds }).addTo(map);
     }
 
-    let hqLocked = false;
-    let selectedLayer = null;
-    let hqCountryName = "";
-    let timeLeft = 15;
-
-    const timerEl = document.getElementById('timer');
-    const nameEl = document.getElementById('country-name');
-    const flagEl = document.getElementById('flag-img');
-    const actionEl = document.getElementById('action-zone');
-    const sideMenu = document.getElementById('side-menu');
-    const toggleBtn = document.getElementById('toggle-side');
-    const menuProvince = document.getElementById('menu-province-name');
+    let hqLocked = false, selectedLayer = null, hqCountryName = "", timeLeft = 15;
+    const timerEl = document.getElementById('timer'), nameEl = document.getElementById('country-name');
+    const flagEl = document.getElementById('flag-img'), actionEl = document.getElementById('action-zone');
+    const sideMenu = document.getElementById('side-menu'), toggleBtn = document.getElementById('toggle-side');
 
     const countdown = setInterval(() => {
         if (hqLocked) return;
-        timeLeft--;
-        timerEl.innerText = timeLeft;
-        if (timeLeft <= 0) {
-            clearInterval(countdown);
-            document.getElementById('game-over').style.display = 'flex';
-        }
+        timeLeft--; timerEl.innerText = timeLeft;
+        if (timeLeft <= 0) { clearInterval(countdown); document.getElementById('game-over').style.display = 'flex'; }
     }, 1000);
 
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(res => res.json())
     .then(data => {
-        nameEl.innerText = "CHOISISSEZ UN TERRITOIRE";
         L.geoJson(data, {
-            style: { fillColor: '#555', fillOpacity: 0.5, color: '#888', weight: 1 },
+            style: { fillColor: '#444', fillOpacity: 0.6, color: '#666', weight: 1 },
             onEachFeature: (feature, layer) => {
-                
-                // --- EFFET DE SURVOL (HOVER) ---
-                layer.on('mouseover', function (e) {
-                    if (!hqLocked || (hqLocked && feature.properties.name !== hqCountryName)) {
-                        this.setStyle({ fillOpacity: 0.8, fillColor: '#777' });
-                    }
+                layer.on('mouseover', function () {
+                    if (!hqLocked || this !== selectedLayer) this.setStyle({ fillOpacity: 0.9, fillColor: '#888' });
                 });
-
-                layer.on('mouseout', function (e) {
-                    if (this !== selectedLayer || !hqLocked) {
-                        this.setStyle({ fillOpacity: 0.5, fillColor: '#555' });
-                    }
+                layer.on('mouseout', function () {
+                    if (this !== selectedLayer) this.setStyle({ fillOpacity: 0.6, fillColor: '#444' });
                 });
-
-                // --- CLIC ---
                 layer.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
-                    const props = feature.properties;
-                    const iso = (props.ISO_A2 || props.iso_a2 || "").toUpperCase();
+                    const iso = (feature.properties.ISO_A2 || "").toUpperCase();
+                    let nameFR = iso ? translateFR.of(iso) : feature.properties.ADMIN;
                     
-                    let nameFR;
-                    try {
-                        nameFR = iso ? translateFR.of(iso) : props.ADMIN;
-                    } catch (err) {
-                        nameFR = props.ADMIN || props.name;
-                    }
-
                     nameEl.innerText = nameFR;
-                    if (iso && iso !== "-99") {
-                        flagEl.src = `https://flagcdn.com/w160/${iso.toLowerCase()}.png`;
+                    if (iso) { 
+                        flagEl.src = `https://flagcdn.com/w160/${iso.toLowerCase()}.png`; 
                         flagEl.style.display = "block";
                     }
 
-                    if (hqLocked && nameFR === hqCountryName) {
-                        toggleSideMenu(true);
-                    }
-
+                    if (hqLocked && nameFR === hqCountryName) toggleSideMenu(true);
                     if (!hqLocked) {
-                        if (selectedLayer) { 
-                            selectedLayer.setStyle({ fillColor: '#555', fillOpacity: 0.5 }); 
-                        }
+                        if (selectedLayer) selectedLayer.setStyle({ fillColor: '#444', fillOpacity: 0.6 });
                         selectedLayer = layer;
-                        layer.setStyle({ fillColor: '#999', fillOpacity: 0.7 });
+                        layer.setStyle({ fillColor: '#666', fillOpacity: 0.8 });
                         actionEl.innerHTML = `<button class="btn-activate" onclick="confirmHQ()">ACTIVER QG</button>`;
                     }
                 });
@@ -174,31 +168,22 @@
 
     window.confirmHQ = function() {
         if (!selectedLayer || hqLocked) return;
-        hqLocked = true;
-        hqCountryName = nameEl.innerText;
+        hqLocked = true; hqCountryName = nameEl.innerText;
         clearInterval(countdown);
-        
         selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 4, fillOpacity: 1 });
         timerEl.innerText = "OK";
-        timerEl.style.color = "var(--gold)";
         actionEl.innerHTML = `<b style="color:var(--blue)">DÉPLOYÉ</b>`;
-        
         toggleSideMenu(true);
         toggleBtn.style.display = 'flex';
-        menuProvince.innerText = hqCountryName;
+        document.getElementById('menu-province-name').innerText = hqCountryName;
         map.fitBounds(selectedLayer.getBounds());
     };
 
-    window.toggleSideMenu = function(forceOpen = false) {
-        if (forceOpen) {
-            sideMenu.classList.add('active');
-            toggleBtn.innerText = "<";
-            toggleBtn.style.left = "280px";
-        } else {
-            const isOpen = sideMenu.classList.toggle('active');
-            toggleBtn.innerText = isOpen ? "<" : ">";
-            toggleBtn.style.left = isOpen ? "280px" : "0px";
-        }
+    window.toggleSideMenu = function(open = false) {
+        const isOpen = open || !sideMenu.classList.contains('active');
+        sideMenu.classList.toggle('active', isOpen);
+        toggleBtn.innerText = isOpen ? "<" : ">";
+        toggleBtn.style.left = isOpen ? "280px" : "0px";
     };
 </script>
 </body>
