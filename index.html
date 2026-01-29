@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>OpenFront 1918 - Tactical Command</title>
@@ -16,7 +16,7 @@
         }
 
         /* CURSEUR SURVOL PAYS (ROUGE) */
-        .target-hover {
+        .target-hover, .target-hover * {
             cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='%23ff3131' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='%23ff3131' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='%23ff3131' stroke-width='1'/></svg>") 16 16, crosshair !important;
         }
 
@@ -43,7 +43,6 @@
         .menu-content { width: 340px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        /* CARTES */
         .cards-container { display: flex; gap: 10px; margin-top: 15px; overflow-x: auto; padding-bottom: 10px; }
         .strat-card { 
             min-width: 85px; height: 110px; background: #222; border: 1px solid var(--blue); 
@@ -52,7 +51,6 @@
         }
         .strat-card:hover { background: var(--blue); color: black; transform: translateY(-5px); }
 
-        /* RESSOURCES */
         .res-item { margin: 10px 0; font-size: 0.75em; }
         .res-bar { width: 100%; height: 6px; background: #222; margin-top: 4px; border-radius: 2px; }
         .res-fill { height: 100%; background: var(--blue); transition: 0.4s; }
@@ -71,7 +69,7 @@
     <div id="timer">15</div>
     <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1;">
         <div class="flag-frame"><img id="flag-img" src=""></div>
-        <div id="country-name" style="font-size: 1.2em; text-transform: uppercase;">AWAITING SELECTION</div>
+        <div id="country-name" style="font-size: 1.2em; text-transform: uppercase;">EN ATTENTE DE SÉLECTION</div>
     </div>
     <div id="action-zone"></div>
 </header>
@@ -79,22 +77,22 @@
 <div id="main-view">
     <div id="side-menu">
         <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.9em; font-family: 'Arial Black';">STRATEGIC CARDS</h3>
+            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); font-size: 0.9em;">CARTES STRATÉGIQUES</h3>
             <div class="cards-container">
-                <div class="strat-card"><div style="font-size:1.5em">🎖️</div>REINFORCEMENTS</div>
-                <div class="strat-card"><div style="font-size:1.5em">🚜</div>INDUSTRIAL</div>
-                <div class="strat-card"><div style="font-size:1.5em">📡</div>ESPIONAGE</div>
+                <div class="strat-card"><div style="font-size:1.5em">🎖️</div>RENFORTS</div>
+                <div class="strat-card"><div style="font-size:1.5em">🚜</div>INDUSTRIE</div>
+                <div class="strat-card"><div style="font-size:1.5em">📡</div>ESPIONNAGE</div>
             </div>
 
-            <h3 style="color: var(--gold); border-bottom: 1px solid var(--gold); font-size: 0.9em; margin-top: 20px; font-family: 'Arial Black';">RESOURCES</h3>
+            <h3 style="color: var(--gold); border-bottom: 1px solid var(--gold); font-size: 0.9em; margin-top: 20px;">RESSOURCES</h3>
             <div class="res-item"><span>⚙️ FER</span><div class="res-bar"><div id="fill-iron" class="res-fill" style="width: 70%;"></div></div></div>
             <div class="res-item"><span>🧱 PIERRE</span><div class="res-bar"><div id="fill-stone" class="res-fill" style="width: 50%;"></div></div></div>
-            <div class="res-item"><span>🛢️ PETROLE</span><div class="res-bar"><div id="fill-oil" class="res-fill" style="width: 30%; background:var(--red);"></div></div></div>
-            <div class="res-item"><span>🌾 BLE</span><div class="res-bar"><div id="fill-wheat" class="res-fill" style="width: 80%;"></div></div></div>
+            <div class="res-item"><span>🛢️ PÉTROLE</span><div class="res-bar"><div id="fill-oil" class="res-fill" style="width: 30%; background:var(--red);"></div></div></div>
+            <div class="res-item"><span>🌾 BLÉ</span><div class="res-bar"><div id="fill-wheat" class="res-fill" style="width: 80%;"></div></div></div>
             <div class="res-item"><span>🪵 BOIS</span><div class="res-bar"><div id="fill-wood" class="res-fill" style="width: 60%;"></div></div></div>
 
             <div class="pop-section" style="margin-top:20px; background:#000; padding:10px; border:1px solid var(--border);">
-                <div style="font-size: 0.6em; color: var(--blue); font-family: 'Arial Black';">POPULATION DISTRIBUTION</div>
+                <div style="font-size: 0.6em; color: var(--blue);">RÉPARTITION POPULATION</div>
                 <div style="display:flex; height:12px; border:1px solid #444; margin:10px 0;">
                     <div id="bar-w" style="width: 70%; background:var(--blue);"></div>
                     <div id="bar-s" style="width: 30%; background:var(--red);"></div>
@@ -109,7 +107,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([20, 0], 2);
+    const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([48, 2], 4);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
@@ -118,9 +116,11 @@
         const workers = 100 - val;
         document.getElementById('bar-s').style.width = val + "%";
         document.getElementById('bar-w').style.width = workers + "%";
-        // Met à jour visuellement les barres
         document.getElementById('fill-iron').style.width = (workers * 0.8) + "%";
         document.getElementById('fill-wheat').style.width = (workers * 0.9) + "%";
+        document.getElementById('fill-stone').style.width = (workers * 0.7) + "%";
+        document.getElementById('fill-oil').style.width = (workers * 0.4) + "%";
+        document.getElementById('fill-wood').style.width = (workers * 0.6) + "%";
     }
 
     const timerInterval = setInterval(() => {
@@ -136,32 +136,33 @@
         L.geoJson(data, {
             style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
             onEachFeature: (feature, layer) => {
-                // SURVOL : COULEUR ET CURSEUR
-                layer.on('mouseover', function(e) {
-                    if (!hqLocked) {
-                        this.setStyle({ fillColor: '#444', fillOpacity: 0.9 });
-                        document.getElementById('map').classList.add('target-hover');
+                layer.on({
+                    mouseover: function(e) {
+                        if (!hqLocked) {
+                            this.setStyle({ fillColor: '#ffffff', fillOpacity: 0.3 });
+                            document.body.classList.add('target-hover');
+                        }
+                    },
+                    mouseout: function(e) {
+                        if (!hqLocked && this !== selectedLayer) {
+                            this.setStyle({ fillColor: '#222', fillOpacity: 0.7 });
+                        }
+                        document.body.classList.remove('target-hover');
+                    },
+                    click: function(e) {
+                        if(hqLocked) return;
+                        if(selectedLayer) selectedLayer.setStyle({fillColor: '#222'});
+                        selectedLayer = this;
+                        this.setStyle({fillColor: '#555', color: '#00d4ff', weight: 2});
+                        
+                        const props = feature.properties;
+                        const iso = (props.ISO_A2 || props.iso_a2 || "").toLowerCase();
+                        document.getElementById('country-name').innerText = props.ADMIN || props.name;
+                        const img = document.getElementById('flag-img');
+                        img.src = `https://flagcdn.com/w160/${iso}.png`;
+                        img.style.display = "block";
+                        document.getElementById('action-zone').innerHTML = `<button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; font-family:'Arial Black';">ÉTABLIR QG</button>`;
                     }
-                });
-                layer.on('mouseout', function(e) {
-                    if (!hqLocked && this !== selectedLayer) {
-                        this.setStyle({ fillColor: '#222', fillOpacity: 0.7 });
-                    }
-                    document.getElementById('map').classList.remove('target-hover');
-                });
-
-                layer.on('click', () => {
-                    if(hqLocked) return;
-                    if(selectedLayer) selectedLayer.setStyle({fillColor: '#222'});
-                    selectedLayer = layer;
-                    layer.setStyle({fillColor: '#555', color: var(--blue)});
-                    
-                    const iso = (feature.properties.ISO_A2 || feature.properties.iso_a2 || "").toLowerCase();
-                    document.getElementById('country-name').innerText = feature.properties.ADMIN || feature.properties.name;
-                    const img = document.getElementById('flag-img');
-                    img.src = `https://flagcdn.com/w160/${iso}.png`;
-                    img.style.display = "block";
-                    document.getElementById('action-zone').innerHTML = `<button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; font-family:'Arial Black';">ESTABLISH HQ</button>`;
                 });
             }
         }).addTo(map);
@@ -170,11 +171,11 @@
     window.lockHQ = function() {
         hqLocked = true;
         document.getElementById('timer').style.display = 'none';
-        selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 2, fillOpacity: 0.8 });
+        selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 3, fillOpacity: 0.6 });
         document.getElementById('side-menu').classList.add('active');
         document.getElementById('toggle-btn').style.display = 'block';
         document.getElementById('toggle-btn').style.left = "340px";
-        document.getElementById('action-zone').innerHTML = `<b style="color:var(--blue); font-family:'Arial Black';">HQ SECURED</b>`;
+        document.getElementById('action-zone').innerHTML = `<b style="color:var(--blue); font-family:'Arial Black';">QG SÉCURISÉ</b>`;
         map.fitBounds(selectedLayer.getBounds());
     };
 
