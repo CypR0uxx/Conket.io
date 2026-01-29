@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Tactical Command</title>
+    <title>OpenFront 1918 - Global Tactical Command</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
@@ -24,10 +24,6 @@
             cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='%2300d4ff' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='%2300d4ff' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='%2300d4ff' stroke-width='1'/></svg>") 16 16, crosshair;
         }
 
-        .light-theme #main-container, .light-theme #info-header {
-            cursor: url("data:image/svg+xml;chatset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='none' stroke='black' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='32' stroke='black' stroke-width='1'/><line x1='0' y1='16' x2='32' y2='16' stroke='black' stroke-width='1'/></svg>") 16 16, crosshair;
-        }
-
         #info-header {
             width: 95%; max-width: 1300px; height: 110px;
             background: var(--header-bg); color: var(--text); z-index: 1000;
@@ -37,15 +33,19 @@
 
         #timer { font-size: 2.8em; color: var(--red); font-weight: bold; }
         .identity { display: flex; align-items: center; gap: 20px; flex-grow: 1; padding-left: 20px; }
-        .flag-frame { width: 90px; height: 60px; border: 2px solid var(--blue); background: #222; overflow: hidden; }
+        
+        .flag-frame { 
+            width: 90px; height: 60px; border: 2px solid var(--blue); 
+            background: #222; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
         
         #flag-img { 
             width: 100%; height: 100%; object-fit: cover; display: none; 
-            animation: fadeIn 0.5s ease-in;
+            animation: fadeIn 0.4s ease-in;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        #country-name { font-size: 1.8em; font-weight: 900; text-transform: uppercase; color: var(--text); }
+        #country-name { font-size: 1.6em; font-weight: 900; text-transform: uppercase; color: var(--text); }
         .btn-activate { background: var(--blue); color: #000; border: none; padding: 15px 25px; font-weight: bold; cursor: pointer; }
 
         #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; position: relative; }
@@ -74,10 +74,10 @@
 <div id="info-header">
     <div id="timer-box">
         <div id="timer">15</div>
-        <button onclick="toggleTheme()" style="font-size: 0.7em; cursor:pointer;">MODE</button>
+        <button onclick="toggleTheme()" style="font-size: 0.7em; cursor:pointer; padding: 2px 5px;">THEME</button>
     </div>
     <div class="identity">
-        <div class="flag-frame"><img id="flag-img" src=""></div>
+        <div class="flag-frame"><img id="flag-img" src="" alt=""></div>
         <div id="country-name">AWAITING SCAN</div>
     </div>
     <div id="action-zone"></div>
@@ -87,7 +87,7 @@
     <button id="toggle-side" onclick="toggleSideMenu()">></button>
     <div id="side-menu">
         <span style="color: var(--blue); font-size: 0.7em;">HQ COORDINATES</span>
-        <div id="menu-province-name" style="font-size: 1.4em; border-bottom: 2px solid var(--gold); margin-top: 10px; width: 100%; text-align: center;">---</div>
+        <div id="menu-province-name" style="font-size: 1.2em; border-bottom: 2px solid var(--gold); margin-top: 10px; width: 100%; text-align: center;">---</div>
     </div>
     <div id="map-container">
         <div id="map"></div>
@@ -122,6 +122,13 @@
         if (timeLeft <= 0) { clearInterval(countdown); document.getElementById('game-over').style.display = 'flex'; }
     }, 1000);
 
+    // Fonction robuste pour extraire le code ISO correct
+    function getIsoCode(props) {
+        const code = props.ISO_A2 || props.iso_a2 || props.BRK_A2 || props.AD0_A2;
+        if (code && code !== "-99") return code.toLowerCase();
+        return null;
+    }
+
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(res => res.json())
     .then(data => {
@@ -137,16 +144,23 @@
                 layer.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     const props = feature.properties;
-                    const nameEN = props.ADMIN || props.name || "Unknown";
-                    const iso = (props.ISO_A2 || "").toLowerCase();
+                    const nameEN = props.ADMIN || props.name || "Unknown Territory";
+                    const iso = getIsoCode(props);
                     
                     nameEl.innerText = nameEN;
-                    if (iso && iso !== "-99") { 
+
+                    if (iso) { 
+                        // On utilise FlagCDN qui est très fiable
                         flagEl.src = `https://flagcdn.com/w160/${iso}.png`; 
                         flagEl.style.display = "block";
+                        // En cas d'erreur de chargement (code ISO invalide dans le dataset)
+                        flagEl.onerror = () => { flagEl.style.display = "none"; };
+                    } else {
+                        flagEl.style.display = "none";
                     }
 
                     if (hqLocked && nameEN === hqCountryName) toggleSideMenu(true);
+                    
                     if (!hqLocked) {
                         if (selectedLayer) selectedLayer.setStyle({ fillColor: '#444', fillOpacity: 0.6 });
                         selectedLayer = layer;
