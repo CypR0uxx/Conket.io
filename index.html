@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Strategic Command</title>
+    <title>OpenFront 1918 - State Management</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --blue: #00d4ff; --red: #ff3131; --gold: #ffd700;
+            --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
             --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
         }
         
@@ -28,24 +27,28 @@
 
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
         
-        /* MENU LATÉRAL STYLE MILITAIRE */
         #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; overflow-x: hidden; transition: width 0.4s ease; 
-            color: var(--text); display: flex; flex-direction: column; border-right: 0px solid var(--blue); z-index: 1000;
+            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s ease; 
+            color: var(--text); display: flex; flex-direction: column; z-index: 1000;
         }
         #side-menu.active { width: 320px; border-right: 2px solid var(--blue); }
         
         .menu-content { width: 280px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        /* RESSOURCES */
-        .res-item { display: flex; align-items: center; justify-content: space-between; margin: 10px 0; font-size: 0.8em; border-left: 3px solid var(--blue); padding-left: 10px; }
-        .res-icon { font-size: 1.2em; margin-right: 10px; }
-        .res-bar { flex-grow: 1; height: 5px; background: #333; margin: 0 10px; position: relative; }
-        .res-fill { height: 100%; background: var(--blue); width: 60%; }
+        /* ECONOMY SECTION */
+        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        /* RESOURCES */
+        .res-item { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 0.8em; border-left: 3px solid var(--blue); padding-left: 10px; }
+        .res-bar { flex-grow: 1; height: 5px; background: #333; margin: 0 10px; }
+        .res-fill { height: 100%; background: var(--blue); }
 
-        /* GRAPHIQUE */
-        .chart-container { width: 100%; margin-top: 25px; background: #000; padding: 10px; border: 1px solid var(--border); box-sizing: border-box; }
+        /* POPULATION RATIO */
+        .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); }
+        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border: 1px solid #444; }
+        .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.6em; }
+        .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.6em; }
         
         #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; }
 
@@ -56,15 +59,15 @@
 <body>
 
 <div id="game-over">
-    <h1>STRATEGIC COLLAPSE</h1>
-    <button onclick="location.reload()" style="padding: 10px 20px;">RESTART SYSTEM</button>
+    <h1>CRITICAL FAILURE</h1>
+    <button onclick="location.reload()">REBOOT</button>
 </div>
 
 <header id="info-header">
     <div id="timer" style="font-size: 2.5em; color: var(--red);">15</div>
     <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
         <div class="flag-frame"><img id="flag-img" src=""></div>
-        <div id="country-name" style="font-size: 1.4em; margin-left: 15px; text-transform: uppercase;">AWAITING COMMAND</div>
+        <div id="country-name" style="font-size: 1.4em; margin-left: 15px; text-transform: uppercase;">SCANNING GEOPOLITICS...</div>
     </div>
     <div id="action-zone"></div>
 </header>
@@ -72,18 +75,34 @@
 <div id="main-view">
     <div id="side-menu">
         <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); margin-bottom: 5px;">STRATEGIC ASSETS</h3>
-            <div id="hq-name" style="color: var(--gold); margin-bottom: 20px;">SECTOR NOT SECURED</div>
+            <h3 style="color: var(--blue); border-bottom: 1px solid var(--blue); margin-bottom: 10px;">NATIONAL AUDIT</h3>
+            <div id="hq-name" style="color: var(--gold); margin-bottom: 15px; font-size: 0.9em;">---</div>
 
-            <div class="res-item"><span>⚙️ Iron</span><div class="res-bar"><div class="res-fill" style="width: 85%;"></div></div><span>850</span></div>
-            <div class="res-item"><span>🧱 Stone</span><div class="res-bar"><div class="res-fill" style="width: 40%;"></div></div><span>400</span></div>
-            <div class="res-item"><span>🛢️ Oil</span><div class="res-bar"><div class="res-fill" style="width: 25%; background: var(--red);"></div></div><span>120</span></div>
-            <div class="res-item"><span>🌾 Wheat</span><div class="res-bar"><div class="res-fill" style="width: 65%;"></div></div><span>620</span></div>
-            <div class="res-item"><span>🪵 Wood</span><div class="res-bar"><div class="res-fill" style="width: 55%;"></div></div><span>510</span></div>
+            <div class="money-box">
+                <span style="font-size: 1.5em;">💰</span>
+                <div style="text-align: left;">
+                    <div style="font-size: 0.6em; color: var(--gold);">TREASURY RESERVE</div>
+                    <div id="money-val" style="font-size: 1.2em;">1,240,500 $</div>
+                </div>
+            </div>
 
-            <div class="chart-container">
-                <span style="font-size: 0.7em; color: var(--blue);">WAR PRODUCTION OUTPUT</span>
-                <canvas id="warChart"></canvas>
+            <div class="res-item"><span>⚙️ Iron</span><div class="res-bar"><div class="res-fill" style="width: 70%;"></div></div><span>700</span></div>
+            <div class="res-item"><span>🧱 Stone</span><div class="res-bar"><div class="res-fill" style="width: 45%;"></div></div><span>450</span></div>
+            <div class="res-item"><span>🛢️ Oil</span><div class="res-bar"><div class="res-fill" style="width: 20%; background:var(--red);"></div></div><span>90</span></div>
+            <div class="res-item"><span>🌾 Wheat</span><div class="res-bar"><div class="res-fill" style="width: 80%;"></div></div><span>800</span></div>
+            <div class="res-item"><span>🪵 Wood</span><div class="res-bar"><div class="res-fill" style="width: 50%;"></div></div><span>500</span></div>
+
+            <div class="pop-section">
+                <span style="font-size: 0.7em; color: var(--blue);">POPULATION DISTRIBUTION</span>
+                <div class="ratio-container">
+                    <div id="workers-bar" class="ratio-workers" style="width: 70%;">WORKERS</div>
+                    <div id="soldiers-bar" class="ratio-soldiers" style="width: 30%;">SOLDIERS</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.6em; margin-top: 5px;">
+                    <span id="pop-total">Total: 42.5M</span>
+                    <span style="color: var(--red);">Mobilization: 30%</span>
+                </div>
+                <input type="range" min="10" max="90" value="30" style="width:100%; margin-top:15px; cursor: pointer;" oninput="updateRatio(this.value)">
             </div>
         </div>
     </div>
@@ -100,7 +119,13 @@
     const flagImg = document.getElementById('flag-img');
     const countryName = document.getElementById('country-name');
 
-    // Chrono
+    // Mise à jour manuelle du ratio pour la démo
+    function updateRatio(val) {
+        document.getElementById('soldiers-bar').style.width = val + "%";
+        document.getElementById('workers-bar').style.width = (100 - val) + "%";
+        document.querySelector('.pop-section span[style*="color: var(--red)"]').innerText = "Mobilization: " + val + "%";
+    }
+
     const countdown = setInterval(() => {
         if (hqLocked) return;
         timeLeft--;
@@ -108,32 +133,9 @@
         if (timeLeft <= 0) { clearInterval(countdown); document.getElementById('game-over').style.display = 'flex'; }
     }, 1000);
 
-    // Initialisation du Graphique
-    const ctx = document.getElementById('warChart').getContext('2d');
-    const warChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['1914', '1915', '1916', '1917', '1918'],
-            datasets: [{
-                label: 'Industrial Power',
-                data: [12, 19, 35, 50, 80],
-                borderColor: '#00d4ff',
-                backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                borderWidth: 2,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: { y: { display: false }, x: { ticks: { color: '#555', font: { size: 10 } } } },
-            plugins: { legend: { display: false } }
-        }
-    });
-
     function getFlag(iso) {
         if (!iso || iso === "-99") return;
-        const code = iso.toLowerCase().substring(0, 2);
-        flagImg.src = `https://flagcdn.com/w160/${code}.png`;
+        flagImg.src = `https://flagcdn.com/w160/${iso.toLowerCase().substring(0, 2)}.png`;
         flagImg.onload = () => { flagImg.style.display = "block"; };
     }
 
@@ -145,15 +147,13 @@
             onEachFeature: (feature, layer) => {
                 layer.on('click', (e) => {
                     const props = feature.properties;
-                    const name = props.ADMIN || props.name;
-                    countryName.innerText = name;
+                    countryName.innerText = props.ADMIN || props.name;
                     getFlag(props.ISO_A2 || props.iso_a2 || "");
-
                     if(!hqLocked) {
                         if(selectedLayer) selectedLayer.setStyle({fillColor:'#333'});
                         selectedLayer = layer;
                         layer.setStyle({fillColor:'#555', weight: 2});
-                        document.getElementById('action-zone').innerHTML = `<button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; cursor:pointer;">DEPLOY HQ</button>`;
+                        document.getElementById('action-zone').innerHTML = `<button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black;">LOCK REGION</button>`;
                     }
                 });
             }
@@ -166,8 +166,8 @@
         document.getElementById('side-menu').classList.add('active');
         document.getElementById('toggle-btn').style.display = 'block';
         document.getElementById('toggle-btn').style.left = "320px";
-        document.getElementById('hq-name').innerText = countryName.innerText;
-        document.getElementById('action-zone').innerHTML = `<b style="color:var(--blue)">COMM LINK OPEN</b>`;
+        document.getElementById('hq-name').innerText = "HQ LOCATION: " + countryName.innerText;
+        document.getElementById('action-zone').innerHTML = `<b style="color:var(--blue)">SECURED</b>`;
         map.fitBounds(selectedLayer.getBounds());
     };
 
