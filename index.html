@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Système de Commandement Final</title>
+    <title>OpenFront 1918 - Système Intégral</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
@@ -14,11 +14,11 @@
             --bg: #f5f5f5; --header-bg: #ffffff; --text: #111; --map-bg: #e0e0e0; --border: #ccc; --panel: #fff;
         }
 
-        body { margin: 0; background: var(--bg); font-family: 'Arial Black', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: background 0.3s; }
+        body { margin: 0; background: var(--bg); font-family: 'Arial Black', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
         
         /* BANDEAU SUPÉRIEUR */
         #info-header {
-            width: 90%; max-width: 1200px; height: 110px;
+            width: 95%; max-width: 1300px; height: 110px;
             background: var(--header-bg); color: var(--text); z-index: 1000;
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 5px solid var(--blue); padding: 0 30px;
@@ -38,22 +38,28 @@
         .btn-theme { background: var(--border); color: var(--text); border: none; padding: 10px; cursor: pointer; font-size: 0.8em; text-transform: uppercase; border-radius: 4px; }
 
         /* CONTENEUR PRINCIPAL */
-        #main-container { display: flex; width: 90%; max-width: 1200px; height: calc(100vh - 150px); margin-top: 20px; gap: 10px; }
+        #main-container { display: flex; width: 95%; max-width: 1300px; height: calc(100vh - 150px); margin-top: 20px; gap: 0; position: relative; }
         
-        /* MENU LATÉRAL */
+        /* MENU LATÉRAL FERMABLE */
         #side-menu {
-            width: 0; background: var(--panel); border: 2px solid var(--border);
-            overflow: hidden; transition: 0.5s ease-in-out; color: var(--text);
-            display: flex; flex-direction: column; align-items: center;
+            width: 0; background: var(--panel); border: 0 solid var(--border);
+            overflow: hidden; transition: 0.4s ease; color: var(--text);
+            display: flex; flex-direction: column; align-items: center; position: relative;
         }
-        #side-menu.active { width: 250px; padding: 20px; border: 2px solid var(--blue); }
+        #side-menu.active { width: 280px; border: 2px solid var(--blue); padding: 20px; }
 
-        /* CARTE UNIQUE */
+        /* BOUTON FLÈCHE */
+        #toggle-side {
+            position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            background: var(--blue); color: black; border: none; width: 30px; height: 60px;
+            cursor: pointer; display: none; z-index: 2000; align-items: center; justify-content: center;
+            clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%); font-weight: bold;
+        }
+
         #map-container { flex-grow: 1; border: 2px solid var(--border); background: var(--map-bg); position: relative; }
         #map { width: 100%; height: 100%; background: var(--map-bg) !important; }
 
-        .province-label { color: var(--blue); font-size: 0.8em; text-transform: uppercase; margin-top: 20px; }
-        .province-name { font-size: 1.4em; border-bottom: 2px solid var(--gold); padding-bottom: 10px; width: 100%; text-align: center; margin-top: 10px; }
+        .province-name { font-size: 1.4em; border-bottom: 2px solid var(--gold); padding-bottom: 10px; width: 100%; text-align: center; margin-top: 20px; }
 
         #game-over {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -65,8 +71,8 @@
 <body>
 
 <div id="game-over">
-    <h1>DÉLAI DE DÉPLOIEMENT EXPIRÉ</h1>
-    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer; font-weight:bold;">RÉESSAYER</button>
+    <h1>MISSION ÉCHOUÉE</h1>
+    <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer;">REESSAYER</button>
 </div>
 
 <div id="info-header">
@@ -82,10 +88,11 @@
 </div>
 
 <div id="main-container">
+    <button id="toggle-side" onclick="toggleSideMenu()">></button>
     <div id="side-menu">
-        <span class="province-label">Secteur Contrôlé</span>
+        <span style="color: var(--blue); font-size: 0.7em;">UNITÉ DE COMMANDE</span>
         <div id="menu-province-name" class="province-name">---</div>
-        <p style="font-size: 0.7em; margin-top: 30px; color: var(--gold); text-align: center;">INFO PROVINCE :<br>ADMINISTRATION ACTIVÉE</p>
+        <p style="margin-top: 40px; font-size: 0.8em; color: var(--gold);">PROVINCE SÉCURISÉE</p>
     </div>
     <div id="map-container">
         <div id="map"></div>
@@ -94,7 +101,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Configuration de la carte unique (No Repeat)
     const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
     const map = L.map('map', { 
         zoomControl: true, attributionControl: false, minZoom: 2,
@@ -106,8 +112,7 @@
     function toggleTheme() {
         document.body.classList.toggle('light-theme');
         map.removeLayer(currentTileLayer);
-        const isLight = document.body.classList.contains('light-theme');
-        const style = isLight ? 'light_nolabels' : 'dark_nolabels';
+        const style = document.body.classList.contains('light-theme') ? 'light_nolabels' : 'dark_nolabels';
         currentTileLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, { noWrap: true, bounds: worldBounds }).addTo(map);
     }
 
@@ -121,9 +126,9 @@
     const flagEl = document.getElementById('flag-img');
     const actionEl = document.getElementById('action-zone');
     const sideMenu = document.getElementById('side-menu');
+    const toggleBtn = document.getElementById('toggle-side');
     const menuProvince = document.getElementById('menu-province-name');
 
-    // Chrono (Tout est gardé)
     const countdown = setInterval(() => {
         if (hqLocked) return;
         timeLeft--;
@@ -134,7 +139,6 @@
         }
     }, 1000);
 
-    // Chargement des Pays, Noms et Drapeaux
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(res => res.json())
     .then(data => {
@@ -147,20 +151,12 @@
                     const name = props.ADMIN || props.name;
                     const iso = (props.ISO_A2 || props.iso_a2 || "").toLowerCase();
 
-                    // Affichage dans le bandeau
                     nameEl.innerText = name;
                     if (iso && iso !== "-99") {
                         flagEl.src = `https://flagcdn.com/w160/${iso}.png`;
                         flagEl.style.display = "block";
                     }
 
-                    // Si QG déjà verrouillé, cliquer sur son propre pays ouvre/met à jour le menu
-                    if (hqLocked && name === hqCountryName) {
-                        sideMenu.classList.add('active');
-                        menuProvince.innerText = name;
-                    }
-
-                    // Si pas encore verrouillé
                     if (!hqLocked) {
                         selectedLayer = layer;
                         actionEl.innerHTML = `<button class="btn-activate" onclick="confirmHQ()">ACTIVER QG</button>`;
@@ -170,7 +166,6 @@
         }).addTo(map);
     });
 
-    // Validation du QG
     window.confirmHQ = function() {
         if (!selectedLayer || hqLocked) return;
         hqLocked = true;
@@ -180,13 +175,25 @@
         selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 4, fillOpacity: 1 });
         timerEl.innerText = "OK";
         timerEl.style.color = "var(--gold)";
-        actionEl.innerHTML = `<b style="color:var(--blue)">VERROUILLÉ</b>`;
+        actionEl.innerHTML = `<b style="color:var(--blue)">QG VALIDE</b>`;
         
-        // Apparition du menu latéral avec le nom de la province (pays choisi)
-        sideMenu.classList.add('active');
+        // Afficher le menu et la flèche
+        toggleSideMenu(true);
+        toggleBtn.style.display = 'flex';
         menuProvince.innerText = hqCountryName;
-        
         map.fitBounds(selectedLayer.getBounds());
+    };
+
+    window.toggleSideMenu = function(forceOpen = false) {
+        if (forceOpen) {
+            sideMenu.classList.add('active');
+            toggleBtn.innerText = "<";
+            toggleBtn.style.left = "280px";
+        } else {
+            const isOpen = sideMenu.classList.toggle('active');
+            toggleBtn.innerText = isOpen ? "<" : ">";
+            toggleBtn.style.left = isOpen ? "280px" : "0px";
+        }
     };
 </script>
 </body>
