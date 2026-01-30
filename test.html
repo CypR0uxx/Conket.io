@@ -258,8 +258,7 @@
         "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
     };
 
-    // BASE DE DONNEES SUPERFICIE (Source: Utilisateur)
-    // Format nettoyé : Nom -> Surface (entier, km²)
+    // BASE DE DONNEES SUPERFICIE (Source exacte utilisateur)
     const surfaceData = {
         "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
         "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
@@ -357,51 +356,50 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul du BUDGET avec LOGIQUE INVERSÉE (Petit = Riche)
+    // Fonction de calcul du BUDGET avec LOGIQUE INVERSÉE SPECIFIQUE
     function calculateBudget(countryName, layer) {
         let area = 0;
 
-        // 1. Chercher la surface exacte dans la liste fournie
-        // On essaie le nom direct, ou des variations courantes si besoin
+        // 1. Essayer de trouver la surface exacte dans les données fournies
         if (surfaceData[countryName]) {
             area = surfaceData[countryName];
         } else {
-            // Fallback : calcul géométrique si le nom ne correspond pas (ex: nom différent dans GeoJSON)
+            // Fallback géométrique (calcul si le pays n'est pas dans la liste exacte)
             const bounds = layer.getBounds();
             let width = Math.abs(bounds.getEast() - bounds.getWest());
             const height = Math.abs(bounds.getNorth() - bounds.getSouth());
-            
-            // Correction pour les pays traversant la date
             if (width > 200) width = 360 - width; 
-            
-            // Conversion approximative Degrés -> km² (très approximatif à l'équateur 1° ~ 111km)
-            // Area = (w * 111) * (h * 111)
             area = (width * 111) * (height * 111);
         }
 
-        // --- 2. Formule Inverse (Petit = Riche, Gros = Pauvre) ---
-        // Paramètres basés sur tes données :
-        // Russia (17M km²) -> Min Money (200k)
-        // France (640k km²) -> Medium Money (~2.5M)
-        // Vatican/Monaco (<10 km²) -> Max Money (5M)
+        // --- 2. Formule Logarithmique Inversée (CONTINUE) ---
+        // Pour éviter les paliers et rendre chaque km² unique.
+        
+        // Bornes définies par les extrêmes de la liste
+        const minArea = 0.49;        // Vatican
+        const maxArea = 17098242;    // Russie
+        
+        const minBudget = 200000;    // Pour le plus grand (Russie)
+        const maxBudget = 5000000;   // Pour le plus petit (Vatican)
 
-        const minMoney = 200000;   
-        const maxMoney = 5000000;  
+        // On utilise les Logarithmes pour lisser les écarts énormes (0.49 vs 17M)
+        // Cela crée une échelle proportionnelle "ressentie" plus juste.
         
-        // Coefficient de décroissance (k)
-        // On utilise une décroissance exponentielle pour avoir une belle courbe
-        // Money = Min + (Max - Min) * e^(-k * Area)
-        // k doit être très petit car Area est en Millions
-        
-        // Calibrage sur la France (Area ~ 640,000) pour qu'elle soit "moyenne" (0.5 du max)
-        // 0.5 = e^(-k * 640000) -> ln(0.5) = -k * 640000 -> -0.693 = -k * 640000
-        // k ≈ 1.08e-6
-        
-        const k = 0.00000115; 
+        const logArea = Math.log(area);
+        const minLog = Math.log(minArea);
+        const maxLog = Math.log(maxArea);
 
-        let money = minMoney + (maxMoney - minMoney) * Math.exp(-k * area);
+        // Position du pays sur l'échelle de 0 (Vatican) à 1 (Russie)
+        // Plus ratio est proche de 1, plus le pays est grand.
+        const ratio = (logArea - minLog) / (maxLog - minLog);
+
+        // Calcul du budget inverse : 
+        // Si ratio = 0 (Petit) -> on veut maxBudget
+        // Si ratio = 1 (Grand) -> on veut minBudget
         
-        // Arrondi propre
+        let money = maxBudget - (ratio * (maxBudget - minBudget));
+        
+        // Arrondi au millier près pour faire propre
         money = Math.round(money / 1000) * 1000; 
         
         return money.toLocaleString('en-US').replace(/,/g, ' ');
@@ -459,7 +457,7 @@
                     document.getElementById('pop-total').innerText = "Pop: 20.0M";
                     window.updateWorkerDistribution(); 
 
-                    // --- Calcul Budget (Avec Liste Superficie) ---
+                    // --- Calcul Budget (Avec Liste Exacte et Logarithme) ---
                     const budget = calculateBudget(name, layer);
                     document.getElementById('money-val').innerText = budget + " $";
 
