@@ -318,22 +318,49 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul de population INVERSE de la taille
+    // Fonction de calcul de population CORRIGÉE V2
     function calculatePopulation(layer) {
         const bounds = layer.getBounds();
-        // Calcul simple de la surface en degrés carrés (approx)
-        const dx = Math.abs(bounds.getEast() - bounds.getWest());
-        const dy = Math.abs(bounds.getNorth() - bounds.getSouth());
-        const area = dx * dy;
+        // Calcul simple largeur/hauteur en degrés
+        let width = Math.abs(bounds.getEast() - bounds.getWest());
+        const height = Math.abs(bounds.getNorth() - bounds.getSouth());
+        const center = bounds.getCenter();
 
-        // Formule inverse : plus l'aire est grande, plus la pop est petite
-        // Petite aire (~1) -> Pop ~ 300M
-        // Grande aire (~2000, Russie) -> Pop ~ 5M
-        // On utilise une racine carrée pour adoucir la courbe
-        let pop = 2000 / (Math.sqrt(area) + 5); 
+        // 1. Correction Russie et pays "qui dépassent" (Largeur monde)
+        // La Russie traverse souvent la date (-180/180), donc sa largeur brute peut paraître petite ou énorme selon le GeoJSON
+        // Ici on assume une largeur brute. Si c'est > 180, c'est probablement un empire/monde.
+        // On ne la cape plus artificiellement à 60, on laisse la "vraie" taille s'exprimer (360 max).
+        // Cela va rendre la Russie "très grande" -> donc "très peu peuplée" selon la règle inversée.
         
-        // Bornes de sécurité (min 2M, max 300M)
-        pop = Math.max(2, Math.min(300, pop));
+        // 2. Score de surface approximatif (Degrés carrés)
+        let areaScore = width * height;
+
+        // 3. Correction Latitude (Pénalité Grand Nord)
+        // Les pays au nord (Groenland, Russie, Canada) sont visuellement étirés par Mercator.
+        // On augmente leur score pour réduire encore leur population.
+        // Groenland (~75N) vs Russie (~60N). Groenland prendra un plus gros malus visuel.
+        if (Math.abs(center.lat) > 50) {
+            // Facteur augmentant avec la latitude
+            const latFactor = 1 + (Math.abs(center.lat) - 50) / 20; 
+            areaScore = areaScore * latFactor; 
+        }
+
+        // 4. Formule Exponentielle ajustée (Moins raide)
+        // Petit pays (Area ~1-10) -> Tend vers maxPop
+        // Moyen pays (Area ~100) -> Milieu
+        // Géant (Area ~2000+) -> Tend vers minPop
+        
+        const minPop = 2;   // Minimum 2M (Russie, Canada, Australie...)
+        const maxPop = 60;  // Maximum 60M (Petits pays denses : Belgique, Suisse...)
+        
+        // Coefficient de décroissance k
+        // Si Area = 6000 (Russie), on veut être proche de minPop.
+        // Si Area = 500 (France), on veut être moyen (ex: 30-40M).
+        // Si Area = 5 (Belgique), on veut être proche de maxPop (60M).
+        
+        // Formule : Pop = Min + (Max - Min) * e^(-k * Area)
+        // On choisit k = 0.0004 pour adoucir la pente.
+        let pop = minPop + (maxPop - minPop) * Math.exp(-0.0004 * areaScore);
         
         return pop.toFixed(1);
     }
@@ -385,13 +412,13 @@
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
 
-                    // --- NOUVEAU : Calcul de la population ---
+                    // --- Calcul de la population ---
                     const pop = calculatePopulation(layer);
                     currentPopulationMillions = parseFloat(pop);
                     
                     // Mise à jour de l'affichage
                     document.getElementById('pop-total').innerText = "Pop: " + pop + "M";
-                    window.updateWorkerDistribution(); // Recalculer les travailleurs avec la nouvelle pop
+                    window.updateWorkerDistribution(); 
 
                     document.getElementById('action-zone').innerHTML = `
                         <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
