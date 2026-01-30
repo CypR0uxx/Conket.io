@@ -258,6 +258,45 @@
         "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
     };
 
+    // BASE DE DONNEES SUPERFICIE (Source: Utilisateur)
+    // Format nettoyé : Nom -> Surface (entier, km²)
+    const surfaceData = {
+        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
+        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
+        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
+        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
+        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
+        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
+        "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
+        "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
+        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
+        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
+        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
+        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340,
+        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
+        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969,
+        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
+        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
+        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
+        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
+        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
+        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740,
+        "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785,
+        "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671,
+        "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193,
+        "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896,
+        "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713,
+        "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274,
+        "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189,
+        "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717,
+        "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586,
+        "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751,
+        "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452,
+        "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316,
+        "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
+        "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49
+    };
+
     // Mise à jour de la barre principale (Armée vs Travailleurs)
     window.updateMainRatio = function(val) {
         const soldierPct = parseInt(val);
@@ -318,43 +357,49 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul du BUDGET avec Correction Colonies
-    function calculateBudget(layer) {
-        const bounds = layer.getBounds();
-        let width = Math.abs(bounds.getEast() - bounds.getWest());
-        let height = Math.abs(bounds.getNorth() - bounds.getSouth());
-        
-        // --- 1. Correction "Empire Dispersé" ---
-        // Si le pays est gigantesque (ex: France avec ses îles = largeur > 10000 km),
-        // on ignore cette taille aberrante et on lui donne une taille "Moyenne" par défaut.
-        // Cela évite que la France soit considérée comme "Plus grande que la Russie" à cause des bornes.
-        
-        const isDispersedEmpire = (width > 200 || height > 160); // Seuil de détection
+    // Fonction de calcul du BUDGET avec LOGIQUE INVERSÉE (Petit = Riche)
+    function calculateBudget(countryName, layer) {
+        let area = 0;
 
-        let areaScore;
-
-        if (isDispersedEmpire) {
-            // On force une taille "Moyenne" (approx taille France métropolitaine / Turquie)
-            // Cela donnera un budget moyen (~2-3M $)
-            areaScore = 200; 
+        // 1. Chercher la surface exacte dans la liste fournie
+        // On essaie le nom direct, ou des variations courantes si besoin
+        if (surfaceData[countryName]) {
+            area = surfaceData[countryName];
         } else {
-            // Calcul normal pour les pays compacts (Russie, Belgique, USA continental...)
-            // Correction largeur monde si traverse la date
+            // Fallback : calcul géométrique si le nom ne correspond pas (ex: nom différent dans GeoJSON)
+            const bounds = layer.getBounds();
+            let width = Math.abs(bounds.getEast() - bounds.getWest());
+            const height = Math.abs(bounds.getNorth() - bounds.getSouth());
+            
+            // Correction pour les pays traversant la date
             if (width > 200) width = 360 - width; 
-            if (width > 180) width = 180;
-            areaScore = width * height;
+            
+            // Conversion approximative Degrés -> km² (très approximatif à l'équateur 1° ~ 111km)
+            // Area = (w * 111) * (h * 111)
+            area = (width * 111) * (height * 111);
         }
 
         // --- 2. Formule Inverse (Petit = Riche, Gros = Pauvre) ---
-        const minMoney = 200000;   // Russie (Area ~6000)
-        const maxMoney = 5000000;  // Belgique (Area ~4)
+        // Paramètres basés sur tes données :
+        // Russia (17M km²) -> Min Money (200k)
+        // France (640k km²) -> Medium Money (~2.5M)
+        // Vatican/Monaco (<10 km²) -> Max Money (5M)
+
+        const minMoney = 200000;   
+        const maxMoney = 5000000;  
         
-        // Facteur de décroissance k ajusté
-        // Area=4 (Belgique) -> exp(-0.02) ~ 1.0 -> 5M$
-        // Area=200 (France/Medium) -> exp(-1.0) ~ 0.36 -> 2M$
-        // Area=6000 (Russie) -> exp(-30) ~ 0 -> 200k$
+        // Coefficient de décroissance (k)
+        // On utilise une décroissance exponentielle pour avoir une belle courbe
+        // Money = Min + (Max - Min) * e^(-k * Area)
+        // k doit être très petit car Area est en Millions
         
-        let money = minMoney + (maxMoney - minMoney) * Math.exp(-0.005 * areaScore);
+        // Calibrage sur la France (Area ~ 640,000) pour qu'elle soit "moyenne" (0.5 du max)
+        // 0.5 = e^(-k * 640000) -> ln(0.5) = -k * 640000 -> -0.693 = -k * 640000
+        // k ≈ 1.08e-6
+        
+        const k = 0.00000115; 
+
+        let money = minMoney + (maxMoney - minMoney) * Math.exp(-k * area);
         
         // Arrondi propre
         money = Math.round(money / 1000) * 1000; 
@@ -414,8 +459,8 @@
                     document.getElementById('pop-total').innerText = "Pop: 20.0M";
                     window.updateWorkerDistribution(); 
 
-                    // --- Calcul Budget (Inverse Taille) ---
-                    const budget = calculateBudget(layer);
+                    // --- Calcul Budget (Avec Liste Superficie) ---
+                    const budget = calculateBudget(name, layer);
                     document.getElementById('money-val').innerText = budget + " $";
 
                     document.getElementById('action-zone').innerHTML = `
