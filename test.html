@@ -125,7 +125,7 @@
                 <span style="font-size: 1.5em;">💰</span>
                 <div style="text-align: left;">
                     <div style="font-size: 0.7em; color: var(--gold); font-weight: bold;">BUDGET NATIONAL</div>
-                    <div id="money-val" style="font-size: 1.3em; font-family: monospace;">1,240,500 $</div>
+                    <div id="money-val" style="font-size: 1.3em; font-family: monospace;">--- $</div>
                 </div>
             </div>
 
@@ -212,7 +212,7 @@
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
     let currentWorkerPct = 70; // Valeur par défaut
-    let currentPopulationMillions = 42.5; // Population dynamique
+    let currentPopulationMillions = 20; // FIXE à 20M pour tous
 
     // Dictionnaire manuel des drapeaux
     const flagMap = {
@@ -255,7 +255,7 @@
         "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪",
         "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺",
         "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲",
-        "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀🇰🇿", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
+        "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
     };
 
     // Mise à jour de la barre principale (Armée vs Travailleurs)
@@ -277,7 +277,7 @@
         const weights = Array.from(sliders).map(s => parseInt(s.value));
         const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
 
-        // Calcul de la main d'œuvre DISPONIBLE
+        // Calcul de la main d'œuvre DISPONIBLE (Fixe 20M)
         const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
 
         const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
@@ -318,51 +318,44 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul de population CORRIGÉE V2
-    function calculatePopulation(layer) {
+    // Fonction de calcul du BUDGET (Inverse de la taille)
+    function calculateBudget(layer) {
         const bounds = layer.getBounds();
-        // Calcul simple largeur/hauteur en degrés
         let width = Math.abs(bounds.getEast() - bounds.getWest());
         const height = Math.abs(bounds.getNorth() - bounds.getSouth());
         const center = bounds.getCenter();
 
-        // 1. Correction Russie et pays "qui dépassent" (Largeur monde)
-        // La Russie traverse souvent la date (-180/180), donc sa largeur brute peut paraître petite ou énorme selon le GeoJSON
-        // Ici on assume une largeur brute. Si c'est > 180, c'est probablement un empire/monde.
-        // On ne la cape plus artificiellement à 60, on laisse la "vraie" taille s'exprimer (360 max).
-        // Cela va rendre la Russie "très grande" -> donc "très peu peuplée" selon la règle inversée.
-        
-        // 2. Score de surface approximatif (Degrés carrés)
+        // Correction largeur monde
+        if (width > 200) width = 360 - width; // Si traverse la date, prendre la petite largeur
+        if (width > 180) width = 180; // Cap pour empire
+
+        // Score de surface
         let areaScore = width * height;
 
-        // 3. Correction Latitude (Pénalité Grand Nord)
-        // Les pays au nord (Groenland, Russie, Canada) sont visuellement étirés par Mercator.
-        // On augmente leur score pour réduire encore leur population.
-        // Groenland (~75N) vs Russie (~60N). Groenland prendra un plus gros malus visuel.
+        // Correction Latitude (Grand Nord = Très vide = Très grand visuellement)
         if (Math.abs(center.lat) > 50) {
-            // Facteur augmentant avec la latitude
             const latFactor = 1 + (Math.abs(center.lat) - 50) / 20; 
             areaScore = areaScore * latFactor; 
         }
 
-        // 4. Formule Exponentielle ajustée (Moins raide)
-        // Petit pays (Area ~1-10) -> Tend vers maxPop
-        // Moyen pays (Area ~100) -> Milieu
-        // Géant (Area ~2000+) -> Tend vers minPop
+        // Formule Inverse pour l'argent
+        // Petits pays (Area ~1-10) -> Max Money (5M$)
+        // Gros pays (Area ~2000+) -> Min Money (200k$)
+        const minMoney = 200000;
+        const maxMoney = 5000000;
         
-        const minPop = 2;   // Minimum 2M (Russie, Canada, Australie...)
-        const maxPop = 60;  // Maximum 60M (Petits pays denses : Belgique, Suisse...)
+        // Formule exponentielle
+        // e^(-0.001 * area)
+        // Area=10 -> exp ~ 0.99 -> Budget ~ 5M
+        // Area=2000 -> exp ~ 0.13 -> Budget ~ 800k
+        // Area=5000 -> exp ~ 0.006 -> Budget ~ 230k
         
-        // Coefficient de décroissance k
-        // Si Area = 6000 (Russie), on veut être proche de minPop.
-        // Si Area = 500 (France), on veut être moyen (ex: 30-40M).
-        // Si Area = 5 (Belgique), on veut être proche de maxPop (60M).
+        let money = minMoney + (maxMoney - minMoney) * Math.exp(-0.001 * areaScore);
         
-        // Formule : Pop = Min + (Max - Min) * e^(-k * Area)
-        // On choisit k = 0.0004 pour adoucir la pente.
-        let pop = minPop + (maxPop - minPop) * Math.exp(-0.0004 * areaScore);
+        // Arrondir joliment (ex: 1,250,000)
+        money = Math.round(money / 1000) * 1000; 
         
-        return pop.toFixed(1);
+        return money.toLocaleString('en-US').replace(/,/g, ' ');
     }
 
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -412,13 +405,14 @@
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
 
-                    // --- Calcul de la population ---
-                    const pop = calculatePopulation(layer);
-                    currentPopulationMillions = parseFloat(pop);
-                    
-                    // Mise à jour de l'affichage
-                    document.getElementById('pop-total').innerText = "Pop: " + pop + "M";
+                    // --- Fixe Population ---
+                    currentPopulationMillions = 20.0;
+                    document.getElementById('pop-total').innerText = "Pop: 20.0M";
                     window.updateWorkerDistribution(); 
+
+                    // --- Calcul Budget (Inverse Taille) ---
+                    const budget = calculateBudget(layer);
+                    document.getElementById('money-val').innerText = budget + " $";
 
                     document.getElementById('action-zone').innerHTML = `
                         <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
