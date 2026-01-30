@@ -318,41 +318,45 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul du BUDGET (Inverse de la taille)
+    // Fonction de calcul du BUDGET avec Correction Colonies
     function calculateBudget(layer) {
         const bounds = layer.getBounds();
         let width = Math.abs(bounds.getEast() - bounds.getWest());
-        const height = Math.abs(bounds.getNorth() - bounds.getSouth());
-        const center = bounds.getCenter();
+        let height = Math.abs(bounds.getNorth() - bounds.getSouth());
+        
+        // --- 1. Correction "Empire Dispersé" ---
+        // Si le pays est gigantesque (ex: France avec ses îles = largeur > 10000 km),
+        // on ignore cette taille aberrante et on lui donne une taille "Moyenne" par défaut.
+        // Cela évite que la France soit considérée comme "Plus grande que la Russie" à cause des bornes.
+        
+        const isDispersedEmpire = (width > 200 || height > 160); // Seuil de détection
 
-        // Correction largeur monde
-        if (width > 200) width = 360 - width; // Si traverse la date, prendre la petite largeur
-        if (width > 180) width = 180; // Cap pour empire
+        let areaScore;
 
-        // Score de surface
-        let areaScore = width * height;
-
-        // Correction Latitude (Grand Nord = Très vide = Très grand visuellement)
-        if (Math.abs(center.lat) > 50) {
-            const latFactor = 1 + (Math.abs(center.lat) - 50) / 20; 
-            areaScore = areaScore * latFactor; 
+        if (isDispersedEmpire) {
+            // On force une taille "Moyenne" (approx taille France métropolitaine / Turquie)
+            // Cela donnera un budget moyen (~2-3M $)
+            areaScore = 200; 
+        } else {
+            // Calcul normal pour les pays compacts (Russie, Belgique, USA continental...)
+            // Correction largeur monde si traverse la date
+            if (width > 200) width = 360 - width; 
+            if (width > 180) width = 180;
+            areaScore = width * height;
         }
 
-        // Formule Inverse pour l'argent
-        // Petits pays (Area ~1-10) -> Max Money (5M$)
-        // Gros pays (Area ~2000+) -> Min Money (200k$)
-        const minMoney = 200000;
-        const maxMoney = 5000000;
+        // --- 2. Formule Inverse (Petit = Riche, Gros = Pauvre) ---
+        const minMoney = 200000;   // Russie (Area ~6000)
+        const maxMoney = 5000000;  // Belgique (Area ~4)
         
-        // Formule exponentielle
-        // e^(-0.001 * area)
-        // Area=10 -> exp ~ 0.99 -> Budget ~ 5M
-        // Area=2000 -> exp ~ 0.13 -> Budget ~ 800k
-        // Area=5000 -> exp ~ 0.006 -> Budget ~ 230k
+        // Facteur de décroissance k ajusté
+        // Area=4 (Belgique) -> exp(-0.02) ~ 1.0 -> 5M$
+        // Area=200 (France/Medium) -> exp(-1.0) ~ 0.36 -> 2M$
+        // Area=6000 (Russie) -> exp(-30) ~ 0 -> 200k$
         
-        let money = minMoney + (maxMoney - minMoney) * Math.exp(-0.001 * areaScore);
+        let money = minMoney + (maxMoney - minMoney) * Math.exp(-0.005 * areaScore);
         
-        // Arrondir joliment (ex: 1,250,000)
+        // Arrondi propre
         money = Math.round(money / 1000) * 1000; 
         
         return money.toLocaleString('en-US').replace(/,/g, ' ');
