@@ -140,7 +140,7 @@
                     <div id="soldiers-bar" class="ratio-soldiers" style="width: 30%;">ARMÉE</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 8px;">
-                    <span id="pop-total">Pop: 42.5M</span>
+                    <span id="pop-total">Pop: ---</span>
                     <span id="mobilization-text" style="color: var(--red); font-weight: bold;">Mobilisation: 30%</span>
                 </div>
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
@@ -211,8 +211,8 @@
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
-    let currentWorkerPct = 70; // Valeur par défaut (100 - 30% soldats)
-    const totalPopulationMillions = 42.5; // Population totale pour le calcul
+    let currentWorkerPct = 70; // Valeur par défaut
+    let currentPopulationMillions = 42.5; // Population dynamique
 
     // Dictionnaire manuel des drapeaux
     const flagMap = {
@@ -273,36 +273,25 @@
 
     // Nouvelle fonction pour gérer la répartition dynamique
     window.updateWorkerDistribution = function() {
-        // 1. Récupérer toutes les valeurs de "priorité" des curseurs
         const sliders = document.querySelectorAll('.prio-slider');
         const weights = Array.from(sliders).map(s => parseInt(s.value));
-        
-        // 2. Calculer la somme totale des poids
-        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; // Évite division par 0
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
 
-        // 3. Calcul de la main d'œuvre DISPONIBLE (ex: 70% de 42.5M)
-        const totalWorkersAvailable = totalPopulationMillions * (currentWorkerPct / 100);
+        // Calcul de la main d'œuvre DISPONIBLE
+        const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
 
-        // 4. IDs pour mettre à jour l'interface
         const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
 
-        // 5. Calculer et appliquer les pourcentages ET les valeurs absolues
         weights.forEach((weight, index) => {
             const id = resourceIds[index];
-            
-            // Pourcentage RELATIF (part de la main d'œuvre affectée à cette tâche)
             const relativePct = (weight / totalWeight); 
             const displayPct = Math.round(relativePct * 100);
             
-            // Calcul du nombre de travailleurs pour cette ressource (en Millions)
             const workersForResource = totalWorkersAvailable * relativePct;
             const workersFormatted = workersForResource.toFixed(1) + "M";
 
-            // Mise à jour de la largeur visuelle
             const visualWidth = relativePct * 100;
             document.getElementById(`gauge-${id}`).style.width = visualWidth + "%";
-            
-            // Mise à jour du texte avec Pourcentage + Nombre absolu
             document.getElementById(`txt-${id}`).innerText = `${displayPct}% (${workersFormatted})`;
         });
     };
@@ -327,6 +316,26 @@
             return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
         }
         return "🌐"; 
+    }
+
+    // Fonction de calcul de population INVERSE de la taille
+    function calculatePopulation(layer) {
+        const bounds = layer.getBounds();
+        // Calcul simple de la surface en degrés carrés (approx)
+        const dx = Math.abs(bounds.getEast() - bounds.getWest());
+        const dy = Math.abs(bounds.getNorth() - bounds.getSouth());
+        const area = dx * dy;
+
+        // Formule inverse : plus l'aire est grande, plus la pop est petite
+        // Petite aire (~1) -> Pop ~ 300M
+        // Grande aire (~2000, Russie) -> Pop ~ 5M
+        // On utilise une racine carrée pour adoucir la courbe
+        let pop = 2000 / (Math.sqrt(area) + 5); 
+        
+        // Bornes de sécurité (min 2M, max 300M)
+        pop = Math.max(2, Math.min(300, pop));
+        
+        return pop.toFixed(1);
     }
 
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -375,6 +384,14 @@
                     const name = p.ADMIN || p.name;
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+
+                    // --- NOUVEAU : Calcul de la population ---
+                    const pop = calculatePopulation(layer);
+                    currentPopulationMillions = parseFloat(pop);
+                    
+                    // Mise à jour de l'affichage
+                    document.getElementById('pop-total').innerText = "Pop: " + pop + "M";
+                    window.updateWorkerDistribution(); // Recalculer les travailleurs avec la nouvelle pop
 
                     document.getElementById('action-zone').innerHTML = `
                         <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
