@@ -8,6 +8,7 @@
         :root { 
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
             --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
+            --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
         }
         
         * {
@@ -52,6 +53,7 @@
 
         .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
+        /* Styles pour les anciennes barres de ressources (Statistiques) */
         .res-item { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 0.85em; border-left: 3px solid var(--blue); padding-left: 10px; }
         .res-bar { flex-grow: 1; height: 6px; background: #333; margin: 0 10px; border-radius: 3px; overflow: hidden; }
         .res-fill { height: 100%; background: var(--blue); }
@@ -61,6 +63,33 @@
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
+        /* Styles pour les jauges interactives */
+        .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
+        .sub-gauge-row { margin-bottom: 12px; } /* Espacement augmenté pour les curseurs */
+        .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+        .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
+        
+        /* Style des curseurs de priorité */
+        .prio-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #333;
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .prio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--blue);
+            cursor: pointer;
+            border: 2px solid #000;
+        }
+
         #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
 
         #map { flex-grow: 1; background: #0b0b0b !important; }
@@ -100,13 +129,12 @@
                 </div>
             </div>
 
-            <div class="res-item"><span>Fer</span><div class="res-bar"><div class="res-fill" style="width: 70%;"></div></div><span>70%</span></div>
-            <div class="res-item"><span>Pierre</span><div class="res-bar"><div class="res-fill" style="width: 45%;"></div></div><span>45%</span></div>
-            <div class="res-item"><span>Pétrole</span><div class="res-bar"><div class="res-fill" style="width: 20%; background:var(--red);"></div></div><span>20%</span></div>
-            <div class="res-item"><span>Blé</span><div class="res-bar"><div class="res-fill" style="width: 80%;"></div></div><span>80%</span></div>
+            <!-- Statistiques Stocks -->
+            <div class="res-item"><span>Stock Fer</span><div class="res-bar"><div class="res-fill" style="width: 70%;"></div></div></div>
+            <div class="res-item"><span>Stock Blé</span><div class="res-bar"><div class="res-fill" style="width: 80%;"></div></div></div>
 
             <div class="pop-section">
-                <div style="font-size: 0.8em; color: var(--blue); margin-bottom: 10px; font-weight: bold;">RÉPARTITION CITOYENNE</div>
+                <div style="font-size: 0.8em; color: var(--blue); margin-bottom: 10px; font-weight: bold;">POPULATION TOTALE</div>
                 <div class="ratio-container">
                     <div id="workers-bar" class="ratio-workers" style="width: 70%;">TRAVAIL</div>
                     <div id="soldiers-bar" class="ratio-soldiers" style="width: 30%;">ARMÉE</div>
@@ -115,7 +143,51 @@
                     <span id="pop-total">Pop: 42.5M</span>
                     <span id="mobilization-text" style="color: var(--red); font-weight: bold;">Mobilisation: 30%</span>
                 </div>
-                <input type="range" min="5" max="95" value="30" style="width:100%; margin-top:15px;" oninput="updateRatio(this.value)">
+                <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
+
+                <!-- SECTION : Jauges de répartition des travailleurs INTERACTIVES -->
+                <div class="worker-dist-section">
+                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">
+                        AFFECTATION DES TRAVAILLEURS
+                    </div>
+
+                    <!-- Fer -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Pétrole -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Pierre -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Forêt -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Blé -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()">
+                    </div>
+                    
+                    <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
+                </div>
             </div>
         </div>
     </div>
@@ -139,23 +211,104 @@
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
+    let currentWorkerPct = 70; // Valeur par défaut (100 - 30% soldats)
+    const totalPopulationMillions = 42.5; // Population totale pour le calcul
 
-    // Dictionnaire manuel des drapeaux par nom de pays (GeoJSON compatible)
+    // Dictionnaire manuel des drapeaux
     const flagMap = {
-        "France": "🇫🇷", "United States of America": "🇺🇸", "Canada": "🇨🇦", "United Kingdom": "🇬🇧",
-        "Germany": "🇩🇪", "Italy": "🇮🇹", "Spain": "🇪🇸", "Russia": "🇷🇺", "China": "🇨🇳", "Japan": "🇯🇵",
-        "Brazil": "🇧🇷", "Australia": "🇦🇺", "India": "🇮🇳", "Mexico": "🇲🇽", "South Africa": "🇿🇦",
-        "Algeria": "🇩🇿", "Argentina": "🇦🇷", "Belgium": "🇧🇪", "Switzerland": "🇨🇭", "Portugal": "🇵🇹",
-        "Netherlands": "🇳🇱", "Poland": "🇵🇱", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Turkey": "🇹🇷",
-        "Egypt": "🇪🇬", "Morocco": "🇲🇦", "Tunisia": "🇹🇳", "Senegal": "🇸🇳", "Ukraine": "🇺🇦",
-        "Greece": "🇬🇷", "Ireland": "🇮🇪", "Austria": "🇦🇹", "Denmark": "🇩🇰", "Finland": "🇫🇮"
+        "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴",
+        "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹",
+        "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧",
+        "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹",
+        "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳",
+        "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭",
+        "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱",
+        "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Congo (Democratic Republic of the)": "🇨🇩", "Congo (Republic of the)": "🇨🇬",
+        "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿",
+        "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱",
+        "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷",
+        "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮",
+        "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪",
+        "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳",
+        "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺",
+        "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶",
+        "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲",
+        "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮",
+        "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧",
+        "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹",
+        "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻",
+        "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺",
+        "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳",
+        "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦",
+        "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮",
+        "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴",
+        "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦",
+        "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱",
+        "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼",
+        "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲",
+        "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨",
+        "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧",
+        "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸",
+        "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭",
+        "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭",
+        "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷",
+        "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪",
+        "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺",
+        "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲",
+        "Zimbabwe": "🇿🇼"
     };
 
-    window.updateRatio = function(val) {
-        document.getElementById('soldiers-bar').style.width = val + "%";
-        document.getElementById('workers-bar').style.width = (100 - val) + "%";
-        document.getElementById('mobilization-text').innerText = "Mobilisation: " + val + "%";
+    // Mise à jour de la barre principale (Armée vs Travailleurs)
+    window.updateMainRatio = function(val) {
+        const soldierPct = parseInt(val);
+        currentWorkerPct = 100 - soldierPct;
+
+        document.getElementById('soldiers-bar').style.width = soldierPct + "%";
+        document.getElementById('workers-bar').style.width = currentWorkerPct + "%";
+        document.getElementById('mobilization-text').innerText = "Mobilisation: " + soldierPct + "%";
+
+        // Recalculer la distribution des travailleurs car la population de travailleurs a changé
+        window.updateWorkerDistribution();
     };
+
+    // Nouvelle fonction pour gérer la répartition dynamique
+    window.updateWorkerDistribution = function() {
+        // 1. Récupérer toutes les valeurs de "priorité" des curseurs
+        const sliders = document.querySelectorAll('.prio-slider');
+        const weights = Array.from(sliders).map(s => parseInt(s.value));
+        
+        // 2. Calculer la somme totale des poids
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; // Évite division par 0
+
+        // 3. Calcul de la main d'œuvre DISPONIBLE (ex: 70% de 42.5M)
+        const totalWorkersAvailable = totalPopulationMillions * (currentWorkerPct / 100);
+
+        // 4. IDs pour mettre à jour l'interface
+        const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
+
+        // 5. Calculer et appliquer les pourcentages ET les valeurs absolues
+        weights.forEach((weight, index) => {
+            const id = resourceIds[index];
+            
+            // Pourcentage RELATIF (part de la main d'œuvre affectée à cette tâche)
+            const relativePct = (weight / totalWeight); 
+            const displayPct = Math.round(relativePct * 100);
+            
+            // Calcul du nombre de travailleurs pour cette ressource (en Millions)
+            const workersForResource = totalWorkersAvailable * relativePct;
+            const workersFormatted = workersForResource.toFixed(1) + "M";
+
+            // Mise à jour de la largeur visuelle
+            const visualWidth = relativePct * 100;
+            document.getElementById(`gauge-${id}`).style.width = visualWidth + "%";
+            
+            // Mise à jour du texte avec Pourcentage + Nombre absolu
+            document.getElementById(`txt-${id}`).innerText = `${displayPct}% (${workersFormatted})`;
+        });
+    };
+
+    // Initialisation
+    window.updateMainRatio(30);
 
     const countdown = setInterval(() => {
         if (hqLocked) return;
@@ -167,17 +320,12 @@
         }
     }, 1000);
 
-    // Fonction de conversion ISO ou mapping manuel
     function getFlagEmoji(isoCode, countryName) {
-        // 1. Essai avec le nom (Priorité car le GeoJSON Admin est souvent plus fiable)
         if (flagMap[countryName]) return flagMap[countryName];
-        
-        // 2. Essai avec le code ISO s'il existe
         if (isoCode && isoCode !== "-99" && isoCode.length === 2) {
             const code = isoCode.toUpperCase();
             return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
         }
-        
         return "🌐"; 
     }
 
