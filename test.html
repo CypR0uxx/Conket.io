@@ -142,7 +142,8 @@
     <div id="side-menu">
         <div class="menu-content">
             <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
-            <div id="hq-name" style="color: var(--gold); margin-bottom: 20px; font-weight: bold;">---</div>
+            <!-- Modification: Couleur verte appliquée -->
+            <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
 
             <div class="money-box">
                 <span style="font-size: 1.5em;">💰</span>
@@ -161,6 +162,7 @@
                         <span>Stock Fer</span>
                         <span id="val-fer" style="color: var(--iron);">0,5 T</span>
                     </div>
+                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
                     <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0.05%; background: var(--iron);"></div></div>
                 </div>
                 
@@ -169,6 +171,7 @@
                         <span>Stock Pétrole</span>
                         <span id="val-oil" style="color: var(--oil);">0,2 T</span>
                     </div>
+                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
                     <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0.02%; background: var(--oil);"></div></div>
                 </div>
                 
@@ -177,6 +180,7 @@
                         <span>Stock Pierre</span>
                         <span id="val-stone" style="color: var(--stone);">1,2 T</span>
                     </div>
+                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
                     <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0.12%; background: var(--stone);"></div></div>
                 </div>
                 
@@ -185,6 +189,7 @@
                         <span>Stock Bois</span>
                         <span id="val-wood" style="color: var(--wood);">2,0 T</span>
                     </div>
+                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
                     <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0.20%; background: var(--wood);"></div></div>
                 </div>
                 
@@ -193,6 +198,7 @@
                         <span>Stock Blé</span>
                         <span id="val-wheat" style="color: var(--wheat);">10,0 T</span>
                     </div>
+                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
                     <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 1.0%; background: var(--wheat);"></div></div>
                 </div>
             </div>
@@ -277,6 +283,7 @@
     const countryDisplay = document.getElementById('country-name');
     let currentWorkerPct = 70; // Valeur par défaut
     let currentPopulationMillions = 20; // FIXE à 20M pour tous
+    let currentArea = 0; // Variable globale pour stocker la surface
 
     // Dictionnaire manuel des drapeaux
     const flagMap = {
@@ -560,22 +567,22 @@
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
 
                     // --- 2. Calcul de la surface ---
-                    const area = getArea(name, layer);
+                    currentArea = getArea(name, layer);
 
                     // --- 1. Calcul Population & Multiplicateurs de Ressources ---
                     let popBase = 20.0;
                     let resMultiplier = 1.0;
 
-                    if (area < 800) {
+                    if (currentArea < 800) {
                         resMultiplier = 6.0; // +500%
                         popBase = 20.0 * 4.0; // +300% -> x4
-                    } else if (area < 2100) {
+                    } else if (currentArea < 2100) {
                         resMultiplier = 5.0; // +400%
                         popBase = 20.0 * 2.5; // +150% -> x2.5
-                    } else if (area < 23000) {
+                    } else if (currentArea < 23000) {
                         resMultiplier = 3.0; // Triple
                         popBase = 20.0 * 1.5; // +50% -> x1.5
-                    } else if (area < 94000) {
+                    } else if (currentArea < 94000) {
                         resMultiplier = 2.0; // Double (+100%)
                         // Pop unchanged (20M)
                     } else {
@@ -590,34 +597,34 @@
                     window.updateWorkerDistribution(); 
 
                     // --- 3. Calcul Budget ---
-                    const budget = calculateBudget(area);
+                    const budget = calculateBudget(currentArea);
                     document.getElementById('money-val').innerText = budget + " $";
 
                     // --- 4. Calcul Ressources (Petit pays = Riche) ---
                     const capMax = 1000; // Capacité max de la jauge
 
                     // Fer (0.5 - 8.0)
-                    let valFer = calculateResource(area, 0.5, 8.0) * resMultiplier;
+                    let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
                     document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
 
                     // Pétrole (0.2 - 4.0)
-                    let valOil = calculateResource(area, 0.2, 4.0) * resMultiplier;
+                    let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
                     document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
 
                     // Pierre (1.2 - 12.0)
-                    let valStone = calculateResource(area, 1.2, 12.0) * resMultiplier;
+                    let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
                     document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
 
                     // Bois (2.0 - 15.0)
-                    let valWood = calculateResource(area, 2.0, 15.0) * resMultiplier;
+                    let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
                     document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
 
                     // Blé (10.0 - 28.0)
-                    let valWheat = calculateResource(area, 10.0, 28.0) * resMultiplier;
+                    let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
                     document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
 
@@ -638,7 +645,11 @@
         document.getElementById('side-menu').classList.add('active');
         document.getElementById('toggle-btn').style.display = 'block';
         document.getElementById('toggle-btn').style.left = "320px";
-        document.getElementById('hq-name').innerText = "QG ACTIVÉ : " + countryDisplay.innerText;
+        
+        // Afficher QG + Surface
+        const areaStr = currentArea.toLocaleString('fr-FR');
+        document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
+        
         document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold;">PROFIL ACTIVÉ</span>`;
         map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
         
