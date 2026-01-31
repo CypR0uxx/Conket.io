@@ -1,8 +1,8 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Drapeaux & Ressources</title>
+    <title>OpenFront 1918 - Drapeaux Mondiaux</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
@@ -10,8 +10,12 @@
             --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
             --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
         }
-        * { cursor: crosshair !important; }
-        body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        * {
+            cursor: crosshair !important;
+        }
+
+        body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
         #info-header {
             width: 100%; height: 120px;
@@ -21,52 +25,115 @@
         }
 
         .flag-frame { 
-            width: 110px; height: 80px; border: 2px solid var(--blue); 
-            background: #222; display: flex; align-items: center; justify-content: center; 
-            border-radius: 12px; box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2); font-size: 3.5em;
+            width: 110px; height: 80px; 
+            border: 2px solid var(--blue); 
+            background: #222; 
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; overflow: hidden;
+            font-size: 3.5em;
+            border-radius: 12px;
+            box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        #flag-emoji { 
+            line-height: 1;
+            display: block;
         }
 
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
         
         #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s ease; 
+            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
             color: var(--text); display: flex; flex-direction: column; z-index: 1000;
         }
         #side-menu.active { width: 320px; border-right: 2px solid var(--blue); }
+        
         .menu-content { width: 300px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        .res-item { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 0.85em; border-left: 3px solid var(--blue); padding-left: 10px; }
-        .res-bar { flex-grow: 1; height: 6px; background: #333; margin: 0 10px; border-radius: 3px; overflow: hidden; }
-        .res-fill { height: 100%; transition: width 0.5s; }
+        /* --- STYLE STOCKS (Barres Larges en dessous) --- */
+        .res-item { 
+            display: flex; 
+            flex-direction: column; 
+            margin: 15px 0;         
+            font-size: 0.9em;    
+            border-left: 3px solid var(--blue); 
+            padding-left: 10px; 
+        }
+        
+        .res-header {
+            display: flex;
+            justify-content: space-between; 
+            width: 100%;
+            margin-bottom: 6px; 
+            font-weight: bold;
+        }
+        
+        .res-bar { 
+            width: 100%; 
+            height: 10px; 
+            background: #333; 
+            border-radius: 5px; 
+            overflow: hidden; 
+        }
+        
+        .res-fill { height: 100%; transition: width 0.5s ease; }
 
-        .pop-section { margin-top: 20px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
+        .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
         .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
-        .ratio-workers { background: var(--blue); height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
-        .ratio-soldiers { background: var(--red); height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
+        .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
+        .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
-        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; margin: 8px 0; }
-        .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); border: 2px solid #000; cursor: pointer; }
+        /* Styles pour les jauges interactives */
+        .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
+        .sub-gauge-row { margin-bottom: 12px; }
+        .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+        .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
+        
+        /* Style des curseurs de priorité */
+        .prio-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #333;
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .prio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--blue);
+            cursor: pointer;
+            border: 2px solid #000;
+        }
 
-        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; border-radius: 0 5px 5px 0; }
+        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
+
         #map { flex-grow: 1; background: #0b0b0b !important; }
-        #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
+        
+        .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="game-over">
-    <h1 style="font-size: 3em;">MISSION INTERROMPUE</h1>
-    <button style="padding:12px 24px; background:var(--red); border:none; color:white; font-weight:bold; cursor:pointer;" onclick="location.reload()">RÉESSAYER</button>
+    <h1 style="font-size: 3em; margin-bottom: 10px;">MISSION INTERROMPUE</h1>
+    <p>Le temps imparti pour le déploiement a expiré.</p>
+    <button class="btn-restart" onclick="location.reload()">RÉESSAYER</button>
 </div>
 
 <header id="info-header">
     <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
     <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
         <div class="flag-frame"><span id="flag-emoji">🌐</span></div>
-        <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">SÉLECTIONNEZ UNE ZONE</div>
+        <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">INITIALISATION...</div>
     </div>
     <div id="action-zone"></div>
 </header>
@@ -74,50 +141,123 @@
 <div id="main-view">
     <div id="side-menu">
         <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px;">GESTION DU TERRITOIRE</h3>
-            <div id="hq-name" style="color: var(--gold); margin-bottom: 15px; font-weight: bold;">---</div>
+            <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
+            <!-- Modification: Couleur verte appliquée -->
+            <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
 
             <div class="money-box">
                 <span style="font-size: 1.5em;">💰</span>
-                <div>
-                    <div style="font-size: 0.6em; color: var(--gold);">BUDGET NATIONAL</div>
-                    <div id="money-val" style="font-size: 1.1em; font-family: monospace;">1,240,500 $</div>
+                <div style="text-align: left;">
+                    <div style="font-size: 0.7em; color: var(--gold); font-weight: bold;">BUDGET NATIONAL</div>
+                    <div id="money-val" style="font-size: 1.3em; font-family: monospace;">--- $</div>
                 </div>
             </div>
 
-            <div class="res-item"><span>Fer</span><div class="res-bar"><div id="stk-fer" class="res-fill" style="width: 70%; background: var(--iron);"></div></div></div>
-            <div class="res-item"><span>Pétrole</span><div class="res-bar"><div id="stk-oil" class="res-fill" style="width: 40%; background: var(--oil);"></div></div></div>
-            <div class="res-item"><span>Pierre</span><div class="res-bar"><div id="stk-stone" class="res-fill" style="width: 50%; background: var(--stone);"></div></div></div>
-            <div class="res-item"><span>Bois</span><div class="res-bar"><div id="stk-wood" class="res-fill" style="width: 30%; background: var(--wood);"></div></div></div>
-            <div class="res-item"><span>Blé</span><div class="res-bar"><div id="stk-wheat" class="res-fill" style="width: 80%; background: var(--wheat);"></div></div></div>
+            <!-- SECTION STOCKS MISE À JOUR (Max 1000 T) -->
+            <div id="inventory">
+                <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Fer</span>
+                        <span id="val-fer" style="color: var(--iron);">0,5 T</span>
+                    </div>
+                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
+                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0.05%; background: var(--iron);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Pétrole</span>
+                        <span id="val-oil" style="color: var(--oil);">0,2 T</span>
+                    </div>
+                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
+                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0.02%; background: var(--oil);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Pierre</span>
+                        <span id="val-stone" style="color: var(--stone);">1,2 T</span>
+                    </div>
+                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
+                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0.12%; background: var(--stone);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Bois</span>
+                        <span id="val-wood" style="color: var(--wood);">2,0 T</span>
+                    </div>
+                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
+                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0.20%; background: var(--wood);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Blé</span>
+                        <span id="val-wheat" style="color: var(--wheat);">10,0 T</span>
+                    </div>
+                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
+                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 1.0%; background: var(--wheat);"></div></div>
+                </div>
+            </div>
 
             <div class="pop-section">
+                <div style="font-size: 0.8em; color: var(--blue); margin-bottom: 10px; font-weight: bold;">POPULATION TOTALE</div>
                 <div class="ratio-container">
-                    <div id="workers-bar" class="ratio-workers">TRAVAIL</div>
-                    <div id="soldiers-bar" class="ratio-soldiers">ARMÉE</div>
+                    <div id="workers-bar" class="ratio-workers" style="width: 70%;">TRAVAIL</div>
+                    <div id="soldiers-bar" class="ratio-soldiers" style="width: 30%;">ARMÉE</div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.7em; margin-bottom: 10px;">
-                    <span id="pop-total">Pop: 42.5M</span>
-                    <span id="mobilization-text" style="color: var(--red);">Mobilisation: 30%</span>
+                <div style="display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 8px;">
+                    <span id="pop-total">Pop: ---</span>
+                    <span id="mobilization-text" style="color: var(--red); font-weight: bold;">Mobilisation: 30%</span>
                 </div>
-                <input type="range" min="0" max="100" value="30" style="width:100%" oninput="updateMainRatio(this.value)">
+                <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
-                <div style="margin-top:15px; font-size: 0.75em; color: var(--gold);">RÉPARTITION OUVRIÈRE</div>
-                
-                <div style="font-size:0.7em; margin-top:10px;">⛏️ Fer: <span id="txt-fer">0%</span></div>
-                <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
-                
-                <div style="font-size:0.7em;">🛢️ Pétrole: <span id="txt-oil">0%</span></div>
-                <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
+                <!-- SECTION : Jauges de répartition des travailleurs -->
+                <div class="worker-dist-section">
+                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">
+                        AFFECTATION DES TRAVAILLEURS
+                    </div>
 
-                <div style="font-size:0.7em;">🧱 Pierre: <span id="txt-stone">0%</span></div>
-                <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    <!-- Fer -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
 
-                <div style="font-size:0.7em;">🌲 Forêt: <span id="txt-wood">0%</span></div>
-                <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    <!-- Pétrole -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
+                    </div>
 
-                <div style="font-size:0.7em;">🌾 Blé: <span id="txt-wheat">0%</span></div>
-                <input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()">
+                    <!-- Pierre -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Forêt -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Blé -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()">
+                    </div>
+                    
+                    <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
+                </div>
             </div>
         </div>
     </div>
@@ -127,91 +267,421 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', { attributionControl: false, zoomControl: false, minZoom: 2 }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+    const map = L.map('map', { 
+        attributionControl: false, 
+        zoomControl: false, 
+        minZoom: 2,
+        maxBounds: [[-90, -180], [90, 180]]
+    }).setView([20, 0], 2);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { 
+        noWrap: true 
+    }).addTo(map);
 
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
-    let currentWorkerPct = 70;
-    const totalPopulationMillions = 42.5;
+    const flagDisplay = document.getElementById('flag-emoji');
+    const countryDisplay = document.getElementById('country-name');
+    let currentWorkerPct = 70; // Valeur par défaut
+    let currentPopulationMillions = 20; // FIXE à 20M pour tous
+    let currentArea = 0; // Variable globale pour stocker la surface
 
-    const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Argentina": "🇦🇷", "Australia": "🇦🇺", "Austria": "🇦🇹", "Belgium": "🇧🇪", "Brazil": "🇧🇷", "Bulgaria": "🇧🇬", "Canada": "🇨🇦", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Cuba": "🇨🇺", "Denmark": "🇩🇰", "Egypt": "🇪🇬", "Finland": "🇫🇮", "France": "🇫🇷", "Germany": "🇩🇪", "Greece": "🇬🇷", "India": "🇮🇳", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Italy": "🇮🇹", "Japan": "🇯🇵", "Mexico": "🇲🇽", "Morocco": "🇲🇦", "Netherlands": "🇳🇱", "Norway": "🇳🇴", "Ottoman Empire": "🇹🇷", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Romania": "🇷🇴", "Russia": "🇷🇺", "Spain": "🇪🇸", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸" };
-
-    function getFlag(iso, name) {
-        if (flagMap[name]) return flagMap[name];
-        if (iso && iso !== "-99") return String.fromCodePoint(...[...iso.toUpperCase()].map(c => c.charCodeAt(0) + 127397));
-        return "🌐";
-    }
-
-    const timerInt = setInterval(() => {
-        if (hqLocked) return;
-        timeLeft--;
-        document.getElementById('timer').innerText = timeLeft;
-        if (timeLeft <= 0) { clearInterval(timerInt); document.getElementById('game-over').style.display = 'flex'; }
-    }, 1000);
-
-    window.updateMainRatio = function(val) {
-        document.getElementById('soldiers-bar').style.width = val + "%";
-        document.getElementById('workers-bar').style.width = (100 - val) + "%";
-        document.getElementById('mobilization-text').innerText = "Mobilisation: " + val + "%";
-        currentWorkerPct = 100 - val;
-        updateWorkerDistribution();
+    // Dictionnaire manuel des drapeaux
+    const flagMap = {
+        "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴",
+        "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹",
+        "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧",
+        "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹",
+        "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳",
+        "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭",
+        "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱",
+        "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬",
+        "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿",
+        "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱",
+        "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷",
+        "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮",
+        "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪",
+        "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳",
+        "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺",
+        "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶",
+        "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲",
+        "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮",
+        "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧",
+        "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹",
+        "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻",
+        "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺",
+        "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳",
+        "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦",
+        "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮",
+        "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴",
+        "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦",
+        "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱",
+        "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼",
+        "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲",
+        "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨",
+        "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧",
+        "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸",
+        "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭",
+        "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭",
+        "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷",
+        "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪",
+        "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺",
+        "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲",
+        "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
     };
 
+    // BASE DE DONNEES SUPERFICIE
+    const surfaceData = {
+        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517,
+        "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
+        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900,
+        "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
+        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569,
+        "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
+        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000,
+        "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
+        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300,
+        "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
+        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445,
+        "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
+        "Turkey": 783562, "Chile": 756102, "Zambia": 752612,
+        "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
+        "France": 643801, "Somalia": 637657, "Central African Republic": 622984,
+        "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
+        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120,
+        "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
+        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400,
+        "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
+        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975,
+        "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
+        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463,
+        "Poland": 312696, "Oman": 309500, "Italy": 301340,
+        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967,
+        "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
+        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533,
+        "Romania": 238391, "Laos": 236800, "Guyana": 214969,
+        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722,
+        "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
+        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610,
+        "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
+        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538,
+        "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
+        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879,
+        "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
+        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090,
+        "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
+        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474,
+        "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273,
+        "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300,
+        "Latvia": 64589, "Togo": 56785, "Croatia": 56594,
+        "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035,
+        "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933,
+        "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394,
+        "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846,
+        "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743,
+        "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051,
+        "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338,
+        "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966,
+        "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273,
+        "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364,
+        "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812,
+        "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295,
+        "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251,
+        "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765,
+        "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842,
+        "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862,
+        "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778,
+        "Dominica": 751, "Tonga": 747, "Singapore": 728,
+        "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468,
+        "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442,
+        "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344,
+        "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261,
+        "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
+        "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49
+    };
+
+    // Mise à jour de la barre principale (Armée vs Travailleurs)
+    window.updateMainRatio = function(val) {
+        const soldierPct = parseInt(val);
+        currentWorkerPct = 100 - soldierPct;
+
+        document.getElementById('soldiers-bar').style.width = soldierPct + "%";
+        document.getElementById('workers-bar').style.width = currentWorkerPct + "%";
+        document.getElementById('mobilization-text').innerText = "Mobilisation: " + soldierPct + "%";
+
+        // Recalculer la distribution des travailleurs car la population de travailleurs a changé
+        window.updateWorkerDistribution();
+    };
+
+    function formatPopNumber(valMillions) {
+        if (valMillions < 1) {
+            // Arrondi à l'entier pour éviter les décimales bizarres sur les grands nombres convertis
+            return Math.round(valMillions * 1000000).toLocaleString('fr-FR');
+        }
+        return valMillions.toFixed(1) + "M";
+    }
+
+    // Nouvelle fonction pour gérer la répartition dynamique
     window.updateWorkerDistribution = function() {
         const sliders = document.querySelectorAll('.prio-slider');
         const weights = Array.from(sliders).map(s => parseInt(s.value));
-        const totalW = weights.reduce((a, b) => a + b, 0) || 1;
-        const availPop = totalPopulationMillions * (currentWorkerPct / 100);
-        const ids = ['fer', 'oil', 'stone', 'wood', 'wheat'];
-        weights.forEach((w, i) => {
-            const pct = (w / totalW);
-            document.getElementById(`txt-${ids[i]}`).innerText = Math.round(pct * 100) + "% (" + (availPop * pct).toFixed(1) + "M)";
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
+
+        // Calcul de la main d'œuvre DISPONIBLE (Fixe 20M)
+        const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
+
+        const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
+
+        weights.forEach((weight, index) => {
+            const id = resourceIds[index];
+            const relativePct = (weight / totalWeight); 
+            const displayPct = Math.round(relativePct * 100);
+            
+            const workersForResource = totalWorkersAvailable * relativePct;
+            const workersFormatted = formatPopNumber(workersForResource);
+
+            const visualWidth = relativePct * 100;
+            document.getElementById(`gauge-${id}`).style.width = visualWidth + "%";
+            document.getElementById(`txt-${id}`).innerText = `${displayPct}% (${workersFormatted})`;
         });
     };
 
-    window.lockHQ = function() {
-        if (!selectedLayer) return;
-        hqLocked = true;
-        document.getElementById('timer').style.display = 'none'; // Suppression horloge
-        selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 3 });
-        document.getElementById('side-menu').classList.add('active');
-        document.getElementById('toggle-btn').style.display = 'block';
-        document.getElementById('toggle-btn').style.left = "320px";
-        document.getElementById('hq-name').innerText = "QG ACTIVÉ : " + document.getElementById('country-name').innerText;
-        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green)">QG OPÉRATIONNEL</span>`;
-        map.fitBounds(selectedLayer.getBounds());
-    };
+    // Initialisation
+    window.updateMainRatio(30);
 
-    window.toggleMenu = function() {
-        const isOpen = document.getElementById('side-menu').classList.toggle('active');
-        document.getElementById('toggle-btn').innerText = isOpen ? "<" : ">";
-        document.getElementById('toggle-btn').style.left = isOpen ? "320px" : "0";
-    };
+    // Initialisation du Timer Global
+    window.gameTimer = setInterval(() => {
+        if (hqLocked) return;
+        timeLeft--;
+        const timerEl = document.getElementById('timer');
+        if(timerEl) timerEl.innerText = timeLeft;
+        if (timeLeft <= 0) { 
+            clearInterval(window.gameTimer); 
+            document.getElementById('game-over').style.display = 'flex'; 
+        }
+    }, 1000);
+
+    function getFlagEmoji(isoCode, countryName) {
+        if (flagMap[countryName]) return flagMap[countryName];
+        if (isoCode && isoCode !== "-99" && isoCode.length === 2) {
+            const code = isoCode.toUpperCase();
+            return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
+        }
+        return "🌐"; 
+    }
+
+    // --- LOGIQUE SURFACE ET RESSOURCES ---
+    
+    // Fonction utilitaire pour obtenir la surface
+    function getArea(countryName, layer) {
+        if (surfaceData[countryName]) {
+            return surfaceData[countryName];
+        } else {
+            // Fallback géométrique
+            const bounds = layer.getBounds();
+            let width = Math.abs(bounds.getEast() - bounds.getWest());
+            const height = Math.abs(bounds.getNorth() - bounds.getSouth());
+            if (width > 200) width = 360 - width; 
+            return (width * 111) * (height * 111);
+        }
+    }
+
+    // Calcul du BUDGET avec LOGIQUE LOGARITHMIQUE INVERSÉE
+    function calculateBudget(area) {
+        const minArea = 0.49;        
+        const maxArea = 17098242;    
+        const minBudget = 200000;    
+        const maxBudget = 5000000;   
+
+        const safeArea = Math.max(minArea, area);
+        const logArea = Math.log(safeArea);
+        const logMin = Math.log(minArea);
+        const logMax = Math.log(maxArea);
+
+        // Ratio : 0 = Petit (Vatican), 1 = Grand (Russie)
+        const ratio = (logArea - logMin) / (logMax - logMin);
+
+        // Inverser pour l'argent : Petit -> Max Budget
+        let money = maxBudget - (ratio * (maxBudget - minBudget));
+        money = Math.round(money / 1000) * 1000; 
+        
+        return money.toLocaleString('en-US').replace(/,/g, ' ');
+    }
+
+    // NOUVEAU : Calcul des RESSOURCES avec LOGIQUE LOGARITHMIQUE INVERSÉE
+    function calculateResource(area, minRes, maxRes) {
+        const minArea = 0.49;
+        const maxArea = 17098242;
+        
+        const safeArea = Math.max(minArea, area);
+        const logArea = Math.log(safeArea);
+        const logMin = Math.log(minArea);
+        const logMax = Math.log(maxArea);
+        
+        // Ratio : 0 = Petit, 1 = Grand
+        const ratio = (logArea - logMin) / (logMax - logMin);
+        
+        // Inverse : Petit -> Max Ressource, Grand -> Min Ressource
+        let amount = maxRes - (ratio * (maxRes - minRes));
+        
+        // Arrondir à 2 décimales
+        return Math.round(amount * 100) / 100;
+    }
 
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
     .then(r => r.json())
     .then(data => {
         L.geoJson(data, {
             style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
-            onEachFeature: (f, l) => {
-                l.on('mouseover', function() {
+            onEachFeature: (feature, layer) => {
+                
+                layer.on('mouseover', function() {
                     if(hqLocked) return;
-                    const n = f.properties.ADMIN || f.properties.name;
-                    document.getElementById('country-name').innerText = n.toUpperCase();
-                    document.getElementById('flag-emoji').innerText = getFlag(f.properties.ISO_A2, n);
+                    this.setStyle({ fillOpacity: 0.9, fillColor: '#444', color: '#00d4ff' });
+                    
+                    const props = feature.properties;
+                    const name = props.ADMIN || props.name || "Inconnu";
+                    const iso = props.ISO_A2 || props.iso_a2 || "";
+                    
+                    countryDisplay.innerText = name.toUpperCase();
+                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
                 });
-                l.on('click', function() {
+
+                layer.on('mouseout', function() {
+                    if (this !== selectedLayer) {
+                        this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' });
+                    }
                     if(hqLocked) return;
-                    if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', color: '#444' });
+
+                    if (selectedLayer) {
+                        const p = selectedLayer.feature.properties;
+                        const name = p.ADMIN || p.name;
+                        countryDisplay.innerText = name.toUpperCase();
+                        flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+                    } else {
+                        countryDisplay.innerText = "SÉLECTIONNEZ UNE ZONE";
+                        flagDisplay.innerText = "🌐";
+                    }
+                });
+
+                layer.on('click', function() {
+                    if(hqLocked) return;
+                    if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
                     selectedLayer = this;
-                    this.setStyle({ fillColor: '#333', color: '#00d4ff' });
-                    document.getElementById('action-zone').innerHTML = `<button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; cursor:pointer;">ÉTABLIR QG</button>`;
+                    this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
+                    
+                    const p = feature.properties;
+                    const name = p.ADMIN || p.name;
+                    countryDisplay.innerText = name.toUpperCase();
+                    flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+
+                    // --- 2. Calcul de la surface ---
+                    currentArea = getArea(name, layer);
+
+                    // --- 1. Calcul Population & Multiplicateurs de Ressources ---
+                    let basePop = 0.5; // Base pour les grands pays (> 94 000 km²) : 500k = 0.5M
+                    let resMultiplier = 1.0;
+                    let calculatedPop = 0.5;
+
+                    if (currentArea < 800) {
+                        // < 800 km²: +600% increase (x7 multiplier)
+                        resMultiplier = 6.0; 
+                        calculatedPop = basePop * 7.0; // 0.5 * 7 = 3.5M
+                    } else if (currentArea < 2100) {
+                        // 800 - 2100 km²: +300% increase (x4 multiplier)
+                        resMultiplier = 5.0; 
+                        calculatedPop = basePop * 4.0; // 0.5 * 4 = 2.0M
+                    } else if (currentArea < 23000) {
+                        // 2100 - 23000 km²: +100% increase (x2 multiplier)
+                        resMultiplier = 3.0; 
+                        calculatedPop = basePop * 2.0; // 0.5 * 2 = 1.0M
+                    } else if (currentArea < 94000) {
+                        // 23000 - 94000 km²: +40% increase (x1.4 multiplier)
+                        resMultiplier = 2.0; 
+                        calculatedPop = basePop * 1.4; // 0.5 * 1.4 = 0.7M
+                    } else {
+                        // >= 94000 km²: Base
+                        resMultiplier = 1.0;
+                        calculatedPop = basePop; // 0.5M
+                    }
+
+                    // Mise à jour de la population
+                    currentPopulationMillions = calculatedPop;
+                    document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
+                    window.updateWorkerDistribution(); 
+
+                    // --- 3. Calcul Budget ---
+                    const budget = calculateBudget(currentArea);
+                    document.getElementById('money-val').innerText = budget + " $";
+
+                    // --- 4. Calcul Ressources (Petit pays = Riche) ---
+                    const capMax = 1000; // Capacité max de la jauge
+
+                    // Fer (0.5 - 8.0)
+                    let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
+                    document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
+
+                    // Pétrole (0.2 - 4.0)
+                    let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
+                    document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
+
+                    // Pierre (1.2 - 12.0)
+                    let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
+                    document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
+
+                    // Bois (2.0 - 15.0)
+                    let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
+                    document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
+
+                    // Blé (10.0 - 28.0)
+                    let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
+                    document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
+
+
+                    document.getElementById('action-zone').innerHTML = `
+                        <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
+                            ÉTABLIR QG
+                        </button>`;
                 });
             }
         }).addTo(map);
     });
 
-    updateMainRatio(30);
+    window.lockHQ = function() {
+        if (!selectedLayer) return;
+        hqLocked = true;
+        selectedLayer.setStyle({ fillColor: '#00d4ff', color: '#ffd700', weight: 3, fillOpacity: 0.8 });
+        document.getElementById('side-menu').classList.add('active');
+        document.getElementById('toggle-btn').style.display = 'block';
+        document.getElementById('toggle-btn').style.left = "320px";
+        
+        // Afficher QG + Surface
+        const areaStr = currentArea.toLocaleString('fr-FR');
+        document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
+        
+        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold;">PROFIL ACTIVÉ</span>`;
+        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
+        
+        // Arrêter le compte à rebours et afficher "OK"
+        if (window.gameTimer) clearInterval(window.gameTimer);
+        const timerEl = document.getElementById('timer');
+        if(timerEl) {
+            timerEl.innerText = "OK";
+            timerEl.style.color = "var(--green)";
+        }
+    };
+
+    window.toggleMenu = function() {
+        const menu = document.getElementById('side-menu');
+        const btn = document.getElementById('toggle-btn');
+        const isOpen = menu.classList.toggle('active');
+        btn.innerText = isOpen ? "<" : ">";
+        btn.style.left = isOpen ? "320px" : "0";
+    };
 </script>
 </body>
 </html>
