@@ -160,46 +160,46 @@
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Fer</span>
-                        <span id="val-fer" style="color: var(--iron);">0,5 T</span>
+                        <span id="val-fer" style="color: var(--iron);">-- T</span>
                     </div>
                     <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
-                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0.05%; background: var(--iron);"></div></div>
+                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pétrole</span>
-                        <span id="val-oil" style="color: var(--oil);">0,2 T</span>
+                        <span id="val-oil" style="color: var(--oil);">-- T</span>
                     </div>
                     <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
-                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0.02%; background: var(--oil);"></div></div>
+                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pierre</span>
-                        <span id="val-stone" style="color: var(--stone);">1,2 T</span>
+                        <span id="val-stone" style="color: var(--stone);">-- T</span>
                     </div>
                     <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
-                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0.12%; background: var(--stone);"></div></div>
+                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Bois</span>
-                        <span id="val-wood" style="color: var(--wood);">2,0 T</span>
+                        <span id="val-wood" style="color: var(--wood);">-- T</span>
                     </div>
                     <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
-                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0.20%; background: var(--wood);"></div></div>
+                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Blé</span>
-                        <span id="val-wheat" style="color: var(--wheat);">10,0 T</span>
+                        <span id="val-wheat" style="color: var(--wheat);">-- T</span>
                     </div>
                     <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
-                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 1.0%; background: var(--wheat);"></div></div>
+                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
                 </div>
             </div>
 
@@ -570,30 +570,35 @@
                     currentArea = getArea(name, layer);
 
                     // --- 1. Calcul Population & Multiplicateurs de Ressources ---
-                    let popBase = 20.0;
+                    let basePop = 0.5; // Base pour les grands pays (> 94 000 km²) : 500k = 0.5M
                     let resMultiplier = 1.0;
+                    let calculatedPop = 0.5;
 
                     if (currentArea < 800) {
-                        resMultiplier = 6.0; // +500%
-                        popBase = 20.0 * 4.0; // +300% -> x4
+                        // < 800 km²: +600% increase (x7 multiplier)
+                        resMultiplier = 6.0; 
+                        calculatedPop = basePop * 7.0; // 0.5 * 7 = 3.5M
                     } else if (currentArea < 2100) {
-                        resMultiplier = 5.0; // +400%
-                        popBase = 20.0 * 2.5; // +150% -> x2.5
+                        // 800 - 2100 km²: +300% increase (x4 multiplier)
+                        resMultiplier = 5.0; 
+                        calculatedPop = basePop * 4.0; // 0.5 * 4 = 2.0M
                     } else if (currentArea < 23000) {
-                        resMultiplier = 3.0; // Triple
-                        popBase = 20.0 * 1.5; // +50% -> x1.5
+                        // 2100 - 23000 km²: +100% increase (x2 multiplier)
+                        resMultiplier = 3.0; 
+                        calculatedPop = basePop * 2.0; // 0.5 * 2 = 1.0M
                     } else if (currentArea < 94000) {
-                        resMultiplier = 2.0; // Double (+100%)
-                        // Pop unchanged (20M)
+                        // 23000 - 94000 km²: +40% increase (x1.4 multiplier)
+                        resMultiplier = 2.0; 
+                        calculatedPop = basePop * 1.4; // 0.5 * 1.4 = 0.7M
                     } else {
-                        // >= 94000
+                        // >= 94000 km²: Base
                         resMultiplier = 1.0;
-                        popBase = 20.0;
+                        calculatedPop = basePop; // 0.5M
                     }
 
                     // Mise à jour de la population
-                    currentPopulationMillions = popBase;
-                    document.getElementById('pop-total').innerText = "Pop: " + popBase.toFixed(1) + "M";
+                    currentPopulationMillions = calculatedPop;
+                    document.getElementById('pop-total').innerText = "Pop: " + calculatedPop.toFixed(1) + "M";
                     window.updateWorkerDistribution(); 
 
                     // --- 3. Calcul Budget ---
