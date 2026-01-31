@@ -53,21 +53,24 @@
 
         .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
+        /* Styles pour les anciennes barres de ressources (Statistiques) */
         .res-item { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 0.85em; border-left: 3px solid var(--blue); padding-left: 10px; }
         .res-bar { flex-grow: 1; height: 6px; background: #333; margin: 0 10px; border-radius: 3px; overflow: hidden; }
-        .res-fill { height: 100%; transition: width 0.5s ease; }
+        .res-fill { height: 100%; background: var(--blue); }
 
         .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
         .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
+        /* Styles pour les jauges interactives */
         .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
-        .sub-gauge-row { margin-bottom: 12px; }
+        .sub-gauge-row { margin-bottom: 12px; } /* Espacement augmenté pour les curseurs */
         .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
         .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
         
+        /* Style des curseurs de priorité */
         .prio-slider {
             -webkit-appearance: none;
             width: 100%;
@@ -126,14 +129,9 @@
                 </div>
             </div>
 
-            <div id="inventory">
-                <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT</div>
-                <div class="res-item"><span>Stock Fer</span><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 50%; background: var(--iron);"></div></div></div>
-                <div class="res-item"><span>Stock Pétrole</span><div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 30%; background: var(--oil);"></div></div></div>
-                <div class="res-item"><span>Stock Pierre</span><div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 40%; background: var(--stone);"></div></div></div>
-                <div class="res-item"><span>Stock Bois</span><div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 60%; background: var(--wood);"></div></div></div>
-                <div class="res-item"><span>Stock Blé</span><div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 80%; background: var(--wheat);"></div></div></div>
-            </div>
+            <!-- Statistiques Stocks -->
+            <div class="res-item"><span>Stock Fer</span><div class="res-bar"><div class="res-fill" style="width: 70%;"></div></div></div>
+            <div class="res-item"><span>Stock Blé</span><div class="res-bar"><div class="res-fill" style="width: 80%;"></div></div></div>
 
             <div class="pop-section">
                 <div style="font-size: 0.8em; color: var(--blue); margin-bottom: 10px; font-weight: bold;">POPULATION TOTALE</div>
@@ -147,35 +145,41 @@
                 </div>
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
+                <!-- SECTION : Jauges de répartition des travailleurs INTERACTIVES -->
                 <div class="worker-dist-section">
                     <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">
                         AFFECTATION DES TRAVAILLEURS
                     </div>
 
+                    <!-- Fer -->
                     <div class="sub-gauge-row">
                         <div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div>
                         <div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div>
                         <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
                     </div>
 
+                    <!-- Pétrole -->
                     <div class="sub-gauge-row">
                         <div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div>
                         <div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div>
                         <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
                     </div>
 
+                    <!-- Pierre -->
                     <div class="sub-gauge-row">
                         <div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div>
                         <div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div>
                         <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
                     </div>
 
+                    <!-- Forêt -->
                     <div class="sub-gauge-row">
                         <div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div>
                         <div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div>
                         <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
                     </div>
 
+                    <!-- Blé -->
                     <div class="sub-gauge-row">
                         <div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div>
                         <div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div>
@@ -207,9 +211,10 @@
     let hqLocked = false, selectedLayer = null, timeLeft = 15;
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
-    let currentWorkerPct = 70;
-    let currentPopulationMillions = 20;
+    let currentWorkerPct = 70; // Valeur par défaut
+    let currentPopulationMillions = 20; // FIXE à 20M pour tous
 
+    // Dictionnaire manuel des drapeaux
     const flagMap = {
         "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴",
         "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹",
@@ -253,71 +258,115 @@
         "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
     };
 
+    // BASE DE DONNEES SUPERFICIE (Nettoyée et convertie en nombre)
     const surfaceData = {
-        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
-        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
-        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
-        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
-        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
-        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
-        "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
-        "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
-        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
-        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
-        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
-        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340,
-        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
-        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969,
-        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
-        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
-        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
-        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
-        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
-        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740,
-        "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785,
-        "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671,
-        "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193,
-        "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896,
-        "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713,
-        "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274,
-        "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189,
-        "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717,
-        "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586,
-        "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751,
-        "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452,
-        "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316,
-        "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
+        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517,
+        "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
+        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900,
+        "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
+        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569,
+        "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
+        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000,
+        "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
+        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300,
+        "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
+        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445,
+        "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
+        "Turkey": 783562, "Chile": 756102, "Zambia": 752612,
+        "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
+        "France": 643801, "Somalia": 637657, "Central African Republic": 622984,
+        "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
+        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120,
+        "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
+        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400,
+        "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
+        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975,
+        "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
+        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463,
+        "Poland": 312696, "Oman": 309500, "Italy": 301340,
+        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967,
+        "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
+        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533,
+        "Romania": 238391, "Laos": 236800, "Guyana": 214969,
+        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722,
+        "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
+        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610,
+        "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
+        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538,
+        "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
+        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879,
+        "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
+        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090,
+        "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
+        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474,
+        "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273,
+        "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300,
+        "Latvia": 64589, "Togo": 56785, "Croatia": 56594,
+        "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035,
+        "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933,
+        "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394,
+        "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846,
+        "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743,
+        "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051,
+        "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338,
+        "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966,
+        "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273,
+        "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364,
+        "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812,
+        "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295,
+        "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251,
+        "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765,
+        "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842,
+        "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862,
+        "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778,
+        "Dominica": 751, "Tonga": 747, "Singapore": 728,
+        "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468,
+        "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442,
+        "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344,
+        "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261,
+        "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
         "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49
     };
 
+    // Mise à jour de la barre principale (Armée vs Travailleurs)
     window.updateMainRatio = function(val) {
         const soldierPct = parseInt(val);
         currentWorkerPct = 100 - soldierPct;
+
         document.getElementById('soldiers-bar').style.width = soldierPct + "%";
         document.getElementById('workers-bar').style.width = currentWorkerPct + "%";
         document.getElementById('mobilization-text').innerText = "Mobilisation: " + soldierPct + "%";
+
+        // Recalculer la distribution des travailleurs car la population de travailleurs a changé
         window.updateWorkerDistribution();
     };
 
+    // Nouvelle fonction pour gérer la répartition dynamique
     window.updateWorkerDistribution = function() {
         const sliders = document.querySelectorAll('.prio-slider');
         const weights = Array.from(sliders).map(s => parseInt(s.value));
         const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
+
+        // Calcul de la main d'œuvre DISPONIBLE (Fixe 20M)
         const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
+
         const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
 
         weights.forEach((weight, index) => {
             const id = resourceIds[index];
             const relativePct = (weight / totalWeight); 
             const displayPct = Math.round(relativePct * 100);
+            
             const workersForResource = totalWorkersAvailable * relativePct;
             const workersFormatted = workersForResource.toFixed(1) + "M";
+
             const visualWidth = relativePct * 100;
             document.getElementById(`gauge-${id}`).style.width = visualWidth + "%";
             document.getElementById(`txt-${id}`).innerText = `${displayPct}% (${workersFormatted})`;
         });
     };
 
+    // Initialisation
     window.updateMainRatio(30);
 
     const countdown = setInterval(() => {
@@ -339,25 +388,54 @@
         return "🌐"; 
     }
 
+    // Fonction de calcul du BUDGET avec LOGIQUE LOGARITHMIQUE PRECISE
     function calculateBudget(countryName, layer) {
         let area = 0;
+
+        // 1. Essayer de trouver la surface exacte dans les données fournies
         if (surfaceData[countryName]) {
             area = surfaceData[countryName];
         } else {
+            // Fallback géométrique (calcul si le pays n'est pas dans la liste exacte)
             const bounds = layer.getBounds();
             let width = Math.abs(bounds.getEast() - bounds.getWest());
             const height = Math.abs(bounds.getNorth() - bounds.getSouth());
             if (width > 200) width = 360 - width; 
             area = (width * 111) * (height * 111);
         }
-        const minArea = 0.49; const maxArea = 17098242; 
-        const minBudget = 200000; const maxBudget = 5000000;
-        const logArea = Math.log(area);
-        const minLog = Math.log(minArea);
-        const maxLog = Math.log(maxArea);
-        const ratio = (logArea - minLog) / (maxLog - minLog);
+
+        // --- 2. Formule Logarithmique Inversée (CONTINUE) ---
+        // Pour éviter les paliers et rendre chaque km² unique.
+        
+        // Bornes définies par les extrêmes de la liste
+        const minArea = 0.49;        // Vatican
+        const maxArea = 17098242;    // Russie
+        
+        const minBudget = 200000;    // Pour le plus grand (Russie)
+        const maxBudget = 5000000;   // Pour le plus petit (Vatican)
+
+        // On utilise les Logarithmes pour lisser les écarts énormes (0.49 vs 17M)
+        // Cela crée une échelle proportionnelle "ressentie" plus juste.
+        
+        // Sécurité pour éviter log(0) ou log négatif
+        const safeArea = Math.max(minArea, area);
+
+        const logArea = Math.log(safeArea);
+        const logMin = Math.log(minArea);
+        const logMax = Math.log(maxArea);
+
+        // Position du pays sur l'échelle de 0 (Vatican) à 1 (Russie)
+        const ratio = (logArea - logMin) / (logMax - logMin);
+
+        // Calcul du budget inverse : 
+        // Si ratio = 0 (Petit) -> on veut maxBudget
+        // Si ratio = 1 (Grand) -> on veut minBudget
+        
         let money = maxBudget - (ratio * (maxBudget - minBudget));
+        
+        // Arrondi au millier près pour faire propre
         money = Math.round(money / 1000) * 1000; 
+        
         return money.toLocaleString('en-US').replace(/,/g, ' ');
     }
 
@@ -367,20 +445,25 @@
         L.geoJson(data, {
             style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
             onEachFeature: (feature, layer) => {
+                
                 layer.on('mouseover', function() {
                     if(hqLocked) return;
                     this.setStyle({ fillOpacity: 0.9, fillColor: '#444', color: '#00d4ff' });
+                    
                     const props = feature.properties;
                     const name = props.ADMIN || props.name || "Inconnu";
                     const iso = props.ISO_A2 || props.iso_a2 || "";
+                    
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
                 });
+
                 layer.on('mouseout', function() {
                     if (this !== selectedLayer) {
                         this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' });
                     }
                     if(hqLocked) return;
+
                     if (selectedLayer) {
                         const p = selectedLayer.feature.properties;
                         const name = p.ADMIN || p.name;
@@ -391,20 +474,27 @@
                         flagDisplay.innerText = "🌐";
                     }
                 });
+
                 layer.on('click', function() {
                     if(hqLocked) return;
                     if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
                     selectedLayer = this;
                     this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
+                    
                     const p = feature.properties;
                     const name = p.ADMIN || p.name;
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+
+                    // --- Fixe Population ---
                     currentPopulationMillions = 20.0;
                     document.getElementById('pop-total').innerText = "Pop: 20.0M";
                     window.updateWorkerDistribution(); 
+
+                    // --- Calcul Budget (Avec Liste Exacte et Logarithme) ---
                     const budget = calculateBudget(name, layer);
                     document.getElementById('money-val').innerText = budget + " $";
+
                     document.getElementById('action-zone').innerHTML = `
                         <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
                             ÉTABLIR QG
