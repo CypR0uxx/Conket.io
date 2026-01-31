@@ -53,29 +53,32 @@
 
         .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* Styles pour les barres de ressources (Stocks) - Modifié pour layout vertical */
+        /* --- STYLE STOCKS (Barres Larges en dessous) --- */
         .res-item { 
             display: flex; 
-            flex-direction: column; /* Empilement vertical */
-            margin: 12px 0; 
-            font-size: 0.85em; 
+            flex-direction: column; 
+            margin: 15px 0;         
+            font-size: 0.9em;    
             border-left: 3px solid var(--blue); 
             padding-left: 10px; 
         }
+        
         .res-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; 
             width: 100%;
-            margin-bottom: 5px; /* Espace entre le texte et la barre */
+            margin-bottom: 6px; 
             font-weight: bold;
         }
+        
         .res-bar { 
             width: 100%; 
-            height: 8px; /* Un peu plus épais pour la visibilité */
+            height: 10px; 
             background: #333; 
-            border-radius: 4px; 
+            border-radius: 5px; 
             overflow: hidden; 
         }
+        
         .res-fill { height: 100%; transition: width 0.5s ease; }
 
         .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
@@ -149,48 +152,48 @@
                 </div>
             </div>
 
-            <!-- SECTION STOCKS MISE À JOUR -->
+            <!-- SECTION STOCKS (Calculs dynamiques) -->
             <div id="inventory">
-                <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 10 000T)</div>
+                <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Fer</span>
-                        <span style="color: var(--iron);">0,3 T</span>
+                        <span id="val-fer" style="color: var(--iron);">-- T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0.003%; background: var(--iron);"></div></div>
+                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pétrole</span>
-                        <span style="color: var(--oil);">0,1 T</span>
+                        <span id="val-oil" style="color: var(--oil);">-- T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0.001%; background: var(--oil);"></div></div>
+                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pierre</span>
-                        <span style="color: var(--stone);">0,5 T</span>
+                        <span id="val-stone" style="color: var(--stone);">-- T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0.005%; background: var(--stone);"></div></div>
+                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Bois</span>
-                        <span style="color: var(--wood);">0,9 T</span>
+                        <span id="val-wood" style="color: var(--wood);">-- T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0.009%; background: var(--wood);"></div></div>
+                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Blé</span>
-                        <span style="color: var(--wheat);">1,5 T</span>
+                        <span id="val-wheat" style="color: var(--wheat);">-- T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0.015%; background: var(--wheat);"></div></div>
+                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
                 </div>
             </div>
 
@@ -430,12 +433,14 @@
     // Initialisation
     window.updateMainRatio(30);
 
-    const countdown = setInterval(() => {
+    // Initialisation du Timer Global
+    window.gameTimer = setInterval(() => {
         if (hqLocked) return;
         timeLeft--;
-        document.getElementById('timer').innerText = timeLeft;
+        const timerEl = document.getElementById('timer');
+        if(timerEl) timerEl.innerText = timeLeft;
         if (timeLeft <= 0) { 
-            clearInterval(countdown); 
+            clearInterval(window.gameTimer); 
             document.getElementById('game-over').style.display = 'flex'; 
         }
     }, 1000);
@@ -449,55 +454,62 @@
         return "🌐"; 
     }
 
-    // Fonction de calcul du BUDGET avec LOGIQUE LOGARITHMIQUE PRECISE
-    function calculateBudget(countryName, layer) {
-        let area = 0;
-
-        // 1. Essayer de trouver la surface exacte dans les données fournies
+    // --- LOGIQUE SURFACE ET RESSOURCES ---
+    
+    // Fonction utilitaire pour obtenir la surface
+    function getArea(countryName, layer) {
         if (surfaceData[countryName]) {
-            area = surfaceData[countryName];
+            return surfaceData[countryName];
         } else {
-            // Fallback géométrique (calcul si le pays n'est pas dans la liste exacte)
+            // Fallback géométrique
             const bounds = layer.getBounds();
             let width = Math.abs(bounds.getEast() - bounds.getWest());
             const height = Math.abs(bounds.getNorth() - bounds.getSouth());
             if (width > 200) width = 360 - width; 
-            area = (width * 111) * (height * 111);
+            return (width * 111) * (height * 111);
         }
+    }
 
-        // --- 2. Formule Logarithmique Inversée (CONTINUE) ---
-        // Pour éviter les paliers et rendre chaque km² unique.
-        
-        // Bornes définies par les extrêmes de la liste
-        const minArea = 0.49;        // Vatican
-        const maxArea = 17098242;    // Russie
-        
-        const minBudget = 200000;    // Pour le plus grand (Russie)
-        const maxBudget = 5000000;   // Pour le plus petit (Vatican)
+    // Calcul du BUDGET avec LOGIQUE LOGARITHMIQUE INVERSÉE
+    function calculateBudget(area) {
+        const minArea = 0.49;        
+        const maxArea = 17098242;    
+        const minBudget = 200000;    
+        const maxBudget = 5000000;   
 
-        // On utilise les Logarithmes pour lisser les écarts énormes (0.49 vs 17M)
-        // Cela crée une échelle proportionnelle "ressentie" plus juste.
-        
-        // Sécurité pour éviter log(0) ou log négatif
         const safeArea = Math.max(minArea, area);
-
         const logArea = Math.log(safeArea);
         const logMin = Math.log(minArea);
         const logMax = Math.log(maxArea);
 
-        // Position du pays sur l'échelle de 0 (Vatican) à 1 (Russie)
+        // Ratio : 0 = Petit (Vatican), 1 = Grand (Russie)
         const ratio = (logArea - logMin) / (logMax - logMin);
 
-        // Calcul du budget inverse : 
-        // Si ratio = 0 (Petit) -> on veut maxBudget
-        // Si ratio = 1 (Grand) -> on veut minBudget
-        
+        // Inverser pour l'argent : Petit -> Max Budget
         let money = maxBudget - (ratio * (maxBudget - minBudget));
-        
-        // Arrondi au millier près pour faire propre
         money = Math.round(money / 1000) * 1000; 
         
         return money.toLocaleString('en-US').replace(/,/g, ' ');
+    }
+
+    // NOUVEAU : Calcul des RESSOURCES avec LOGIQUE LOGARITHMIQUE INVERSÉE
+    function calculateResource(area, minRes, maxRes) {
+        const minArea = 0.49;
+        const maxArea = 17098242;
+        
+        const safeArea = Math.max(minArea, area);
+        const logArea = Math.log(safeArea);
+        const logMin = Math.log(minArea);
+        const logMax = Math.log(maxArea);
+        
+        // Ratio : 0 = Petit, 1 = Grand
+        const ratio = (logArea - logMin) / (logMax - logMin);
+        
+        // Inverse : Petit -> Max Ressource, Grand -> Min Ressource
+        let amount = maxRes - (ratio * (maxRes - minRes));
+        
+        // Arrondir à 2 décimales
+        return Math.round(amount * 100) / 100;
     }
 
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -547,14 +559,46 @@
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
 
-                    // --- Fixe Population ---
+                    // --- 1. Fixe Population ---
                     currentPopulationMillions = 20.0;
                     document.getElementById('pop-total').innerText = "Pop: 20.0M";
                     window.updateWorkerDistribution(); 
 
-                    // --- Calcul Budget (Avec Liste Exacte et Logarithme) ---
-                    const budget = calculateBudget(name, layer);
+                    // --- 2. Calcul de la surface ---
+                    const area = getArea(name, layer);
+
+                    // --- 3. Calcul Budget ---
+                    const budget = calculateBudget(area);
                     document.getElementById('money-val').innerText = budget + " $";
+
+                    // --- 4. Calcul Ressources (Petit pays = Riche) ---
+                    const capMax = 1000; // Capacité max de la jauge
+
+                    // Fer (0.2 - 0.5)
+                    const valFer = calculateResource(area, 0.2, 0.5);
+                    document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-fer').style.width = (valFer / capMax * 100) + "%";
+
+                    // Pétrole (0.05 - 0.25)
+                    const valOil = calculateResource(area, 0.05, 0.25);
+                    document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-oil').style.width = (valOil / capMax * 100) + "%";
+
+                    // Pierre (0.3 - 0.7)
+                    const valStone = calculateResource(area, 0.3, 0.7);
+                    document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-stone').style.width = (valStone / capMax * 100) + "%";
+
+                    // Bois (0.7 - 1.2)
+                    const valWood = calculateResource(area, 0.7, 1.2);
+                    document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wood').style.width = (valWood / capMax * 100) + "%";
+
+                    // Blé (1 - 2.5)
+                    const valWheat = calculateResource(area, 1.0, 2.5);
+                    document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wheat').style.width = (valWheat / capMax * 100) + "%";
+
 
                     document.getElementById('action-zone').innerHTML = `
                         <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
@@ -577,11 +621,12 @@
         map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
         
         // Arrêter le compte à rebours et afficher "OK"
-        clearInterval(window.countdownTimer); // Assuming we save it to window.countdownTimer, but current code uses const countdown which is scoped.
-        // Actually, the countdown variable is scoped to the script block. We need to handle it correctly or just ignore it if it keeps ticking.
-        // In the original provided code, 'countdown' is a const. We can't clear it from outside easily unless we change how it's stored.
-        // However, the provided 'window.lockHQ' in the prompt didn't have the clear interval logic. I added it based on the prompt's implied merged code.
-        // Let's fix the variable scope for countdown.
+        if (window.gameTimer) clearInterval(window.gameTimer);
+        const timerEl = document.getElementById('timer');
+        if(timerEl) {
+            timerEl.innerText = "OK";
+            timerEl.style.color = "var(--green)";
+        }
     };
 
     window.toggleMenu = function() {
