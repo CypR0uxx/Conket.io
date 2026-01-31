@@ -152,48 +152,53 @@
                 </div>
             </div>
 
-            <!-- SECTION STOCKS (Calculs dynamiques) -->
+            <!-- SECTION STOCKS MISE À JOUR (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Fer</span>
-                        <span id="val-fer" style="color: var(--iron);">-- T</span>
+                        <span id="val-fer" style="color: var(--iron);">0,5 T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
+                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
+                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0.05%; background: var(--iron);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pétrole</span>
-                        <span id="val-oil" style="color: var(--oil);">-- T</span>
+                        <span id="val-oil" style="color: var(--oil);">0,2 T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
+                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
+                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0.02%; background: var(--oil);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Pierre</span>
-                        <span id="val-stone" style="color: var(--stone);">-- T</span>
+                        <span id="val-stone" style="color: var(--stone);">1,2 T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
+                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
+                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0.12%; background: var(--stone);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Bois</span>
-                        <span id="val-wood" style="color: var(--wood);">-- T</span>
+                        <span id="val-wood" style="color: var(--wood);">2,0 T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
+                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
+                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0.20%; background: var(--wood);"></div></div>
                 </div>
                 
                 <div class="res-item">
                     <div class="res-header">
                         <span>Stock Blé</span>
-                        <span id="val-wheat" style="color: var(--wheat);">-- T</span>
+                        <span id="val-wheat" style="color: var(--wheat);">10,0 T</span>
                     </div>
-                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
+                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
+                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 1.0%; background: var(--wheat);"></div></div>
                 </div>
             </div>
 
@@ -574,28 +579,28 @@
                     // --- 4. Calcul Ressources (Petit pays = Riche) ---
                     const capMax = 1000; // Capacité max de la jauge
 
-                    // Fer (0.2 - 0.5)
-                    const valFer = calculateResource(area, 0.2, 0.5);
+                    // Fer (0.5 - 8.0)
+                    const valFer = calculateResource(area, 0.5, 8.0);
                     document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-fer').style.width = (valFer / capMax * 100) + "%";
 
-                    // Pétrole (0.05 - 0.25)
-                    const valOil = calculateResource(area, 0.05, 0.25);
+                    // Pétrole (0.2 - 4.0)
+                    const valOil = calculateResource(area, 0.2, 4.0);
                     document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-oil').style.width = (valOil / capMax * 100) + "%";
 
-                    // Pierre (0.3 - 0.7)
-                    const valStone = calculateResource(area, 0.3, 0.7);
+                    // Pierre (1.2 - 12.0)
+                    const valStone = calculateResource(area, 1.2, 12.0);
                     document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-stone').style.width = (valStone / capMax * 100) + "%";
 
-                    // Bois (0.7 - 1.2)
-                    const valWood = calculateResource(area, 0.7, 1.2);
+                    // Bois (2.0 - 15.0)
+                    const valWood = calculateResource(area, 2.0, 15.0);
                     document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-wood').style.width = (valWood / capMax * 100) + "%";
 
-                    // Blé (1 - 2.5)
-                    const valWheat = calculateResource(area, 1.0, 2.5);
+                    // Blé (10.0 - 28.0)
+                    const valWheat = calculateResource(area, 10.0, 28.0);
                     document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
                     document.getElementById('stock-wheat').style.width = (valWheat / capMax * 100) + "%";
 
