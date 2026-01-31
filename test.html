@@ -30,7 +30,7 @@
             background: #222; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; overflow: hidden;
-            font-size: 3.5em;
+            font-size: 3.5em; /* Taille de l'emoji */
             border-radius: 12px;
             box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
         }
@@ -38,6 +38,7 @@
         #flag-emoji { 
             line-height: 1;
             display: block;
+            cursor: default;
         }
 
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
@@ -132,6 +133,7 @@
 <header id="info-header">
     <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
     <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
+        <!-- Retour au SPAN pour l'Emoji -->
         <div class="flag-frame"><span id="flag-emoji">🌐</span></div>
         <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">INITIALISATION...</div>
     </div>
@@ -142,7 +144,6 @@
     <div id="side-menu">
         <div class="menu-content">
             <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
-            <!-- Modification: Couleur verte appliquée -->
             <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
 
             <div class="money-box">
@@ -153,7 +154,7 @@
                 </div>
             </div>
 
-            <!-- SECTION STOCKS MISE À JOUR (Max 1000 T) -->
+            <!-- SECTION STOCKS (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
                 
@@ -162,7 +163,6 @@
                         <span>Stock Fer</span>
                         <span id="val-fer" style="color: var(--iron);">-- T</span>
                     </div>
-                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
                     <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
                 </div>
                 
@@ -171,7 +171,6 @@
                         <span>Stock Pétrole</span>
                         <span id="val-oil" style="color: var(--oil);">-- T</span>
                     </div>
-                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
                     <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
                 </div>
                 
@@ -180,7 +179,6 @@
                         <span>Stock Pierre</span>
                         <span id="val-stone" style="color: var(--stone);">-- T</span>
                     </div>
-                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
                     <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
                 </div>
                 
@@ -189,7 +187,6 @@
                         <span>Stock Bois</span>
                         <span id="val-wood" style="color: var(--wood);">-- T</span>
                     </div>
-                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
                     <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
                 </div>
                 
@@ -198,7 +195,6 @@
                         <span>Stock Blé</span>
                         <span id="val-wheat" style="color: var(--wheat);">-- T</span>
                     </div>
-                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
                     <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
                 </div>
             </div>
@@ -282,10 +278,10 @@
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
     let currentWorkerPct = 70; // Valeur par défaut
-    let currentPopulationMillions = 20; // FIXE à 20M pour tous
-    let currentArea = 0; // Variable globale pour stocker la surface
+    let currentPopulationMillions = 0.5; // Base pour grand pays
+    let currentArea = 0; 
 
-    // Dictionnaire manuel des drapeaux
+    // Dictionnaire enrichi pour les drapeaux manquants ou non-standard
     const flagMap = {
         "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴",
         "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹",
@@ -294,7 +290,7 @@
         "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳",
         "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭",
         "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱",
-        "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬",
+        "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬", "Democratic Republic of the Congo": "🇨🇩",
         "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿",
         "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱",
         "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷",
@@ -304,7 +300,7 @@
         "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺",
         "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶",
         "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲",
-        "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮",
+        "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰",
         "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧",
         "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹",
         "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻",
@@ -321,81 +317,49 @@
         "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧",
         "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸",
         "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭",
-        "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭",
+        "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱",
         "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷",
         "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪",
         "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺",
         "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲",
-        "Zimbabwe": "🇿🇼", "baykonur cosmodrome": "🚀", "Somaliland": "🇮🇷", "democratic republic of the congo": "🇨🇩", "Greenland": "🇬🇱"
+        "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭"
     };
 
     // BASE DE DONNEES SUPERFICIE
     const surfaceData = {
-        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517,
-        "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
-        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900,
-        "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
-        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569,
-        "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
-        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000,
-        "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
-        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300,
-        "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
-        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445,
-        "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
-        "Turkey": 783562, "Chile": 756102, "Zambia": 752612,
-        "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
-        "France": 643801, "Somalia": 637657, "Central African Republic": 622984,
-        "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
-        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120,
-        "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
-        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400,
-        "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
-        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975,
-        "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
-        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463,
-        "Poland": 312696, "Oman": 309500, "Italy": 301340,
-        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967,
-        "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
-        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533,
-        "Romania": 238391, "Laos": 236800, "Guyana": 214969,
-        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722,
-        "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
-        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610,
-        "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
-        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538,
-        "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
-        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879,
-        "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
-        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090,
-        "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
-        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474,
-        "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273,
-        "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300,
-        "Latvia": 64589, "Togo": 56785, "Croatia": 56594,
-        "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035,
-        "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933,
-        "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394,
-        "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846,
-        "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743,
-        "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051,
-        "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338,
-        "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966,
-        "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273,
-        "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364,
-        "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812,
-        "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295,
-        "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251,
-        "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765,
-        "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842,
-        "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862,
-        "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778,
-        "Dominica": 751, "Tonga": 747, "Singapore": 728,
-        "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468,
-        "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442,
-        "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344,
-        "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261,
-        "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
+        "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024,
+        "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086,
+        "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195,
+        "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192,
+        "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450,
+        "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590,
+        "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329,
+        "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730,
+        "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442,
+        "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752,
+        "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424,
+        "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340,
+        "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857,
+        "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969,
+        "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120,
+        "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100,
+        "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763,
+        "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000,
+        "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871,
+        "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740,
+        "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785,
+        "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671,
+        "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193,
+        "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896,
+        "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713,
+        "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274,
+        "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189,
+        "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717,
+        "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586,
+        "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751,
+        "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452,
+        "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316,
+        "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61,
         "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49
     };
 
@@ -412,13 +376,21 @@
         window.updateWorkerDistribution();
     };
 
+    function formatPopNumber(valMillions) {
+        if (valMillions < 1) {
+            // Arrondi à l'entier pour éviter les décimales bizarres sur les grands nombres convertis
+            return Math.round(valMillions * 1000000).toLocaleString('fr-FR');
+        }
+        return valMillions.toFixed(1) + "M";
+    }
+
     // Nouvelle fonction pour gérer la répartition dynamique
     window.updateWorkerDistribution = function() {
         const sliders = document.querySelectorAll('.prio-slider');
         const weights = Array.from(sliders).map(s => parseInt(s.value));
         const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
 
-        // Calcul de la main d'œuvre DISPONIBLE (Fixe 20M)
+        // Calcul de la main d'œuvre DISPONIBLE
         const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
 
         const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
@@ -429,7 +401,7 @@
             const displayPct = Math.round(relativePct * 100);
             
             const workersForResource = totalWorkersAvailable * relativePct;
-            const workersFormatted = workersForResource.toFixed(1) + "M";
+            const workersFormatted = formatPopNumber(workersForResource);
 
             const visualWidth = relativePct * 100;
             document.getElementById(`gauge-${id}`).style.width = visualWidth + "%";
@@ -453,12 +425,17 @@
     }, 1000);
 
     function getFlagEmoji(isoCode, countryName) {
+        // 1. Chercher dans le mapping manuel
         if (flagMap[countryName]) return flagMap[countryName];
+        
+        // 2. Conversion ISO vers Emoji si code valide
         if (isoCode && isoCode !== "-99" && isoCode.length === 2) {
             const code = isoCode.toUpperCase();
             return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
         }
-        return "🌐"; 
+        
+        // 3. Fallback
+        return "🏳️"; 
     }
 
     // --- LOGIQUE SURFACE ET RESSOURCES ---
@@ -547,8 +524,9 @@
                     if (selectedLayer) {
                         const p = selectedLayer.feature.properties;
                         const name = p.ADMIN || p.name;
+                        const iso = p.ISO_A2 || p.iso_a2 || "";
                         countryDisplay.innerText = name.toUpperCase();
-                        flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+                        flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
                     } else {
                         countryDisplay.innerText = "SÉLECTIONNEZ UNE ZONE";
                         flagDisplay.innerText = "🌐";
@@ -563,8 +541,9 @@
                     
                     const p = feature.properties;
                     const name = p.ADMIN || p.name;
+                    const iso = p.ISO_A2 || p.iso_a2 || "";
                     countryDisplay.innerText = name.toUpperCase();
-                    flagDisplay.innerText = getFlagEmoji((p.ISO_A2 || p.iso_a2 || "").trim(), name);
+                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
 
                     // --- 2. Calcul de la surface ---
                     currentArea = getArea(name, layer);
@@ -598,7 +577,7 @@
 
                     // Mise à jour de la population
                     currentPopulationMillions = calculatedPop;
-                    document.getElementById('pop-total').innerText = "Pop: " + calculatedPop.toFixed(1) + "M";
+                    document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
                     window.updateWorkerDistribution(); 
 
                     // --- 3. Calcul Budget ---
