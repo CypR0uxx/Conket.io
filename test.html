@@ -32,7 +32,7 @@
             background: #222; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; overflow: hidden;
-            font-size: 3.5em;
+            font-size: 3.5em; /* Taille de l'emoji */
             border-radius: 12px;
             box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
         }
@@ -56,10 +56,32 @@
 
         .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* Styles Stocks */
-        .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
-        .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
-        .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        /* --- STYLE STOCKS (Barres Larges en dessous) --- */
+        .res-item { 
+            display: flex; 
+            flex-direction: column; 
+            margin: 15px 0;         
+            font-size: 0.9em;    
+            border-left: 3px solid var(--blue); 
+            padding-left: 10px; 
+        }
+        
+        .res-header {
+            display: flex;
+            justify-content: space-between; 
+            width: 100%;
+            margin-bottom: 6px; 
+            font-weight: bold;
+        }
+        
+        .res-bar { 
+            width: 100%; 
+            height: 10px; 
+            background: #333; 
+            border-radius: 5px; 
+            overflow: hidden; 
+        }
+        
         .res-fill { height: 100%; transition: width 0.5s ease; }
 
         .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
@@ -67,18 +89,38 @@
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
+        /* Styles pour les jauges interactives */
         .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
         .sub-gauge-row { margin-bottom: 12px; }
         .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
         .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
         
-        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
-        .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
+        /* Style des curseurs de priorité */
+        .prio-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #333;
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .prio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--blue);
+            cursor: pointer;
+            border: 2px solid #000;
+        }
 
         #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
+
         #map { flex-grow: 1; background: #0b0b0b !important; }
         #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
+        
         .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
         
         /* Style des icônes de ressources sur la carte */
@@ -111,6 +153,7 @@
     <div id="side-menu">
         <div class="menu-content">
             <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
+            <!-- Modification: Couleur verte appliquée -->
             <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
 
             <div class="money-box">
@@ -121,14 +164,54 @@
                 </div>
             </div>
 
-            <!-- STOCKS -->
+            <!-- SECTION STOCKS (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
-                <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Pétrole</span><span id="val-oil" style="color: var(--oil);">-- T</span></div><div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Pierre</span><span id="val-stone" style="color: var(--stone);">-- T</span></div><div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Bois</span><span id="val-wood" style="color: var(--wood);">-- T</span></div><div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Blé</span><span id="val-wheat" style="color: var(--wheat);">-- T</span></div><div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div></div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Fer</span>
+                        <span id="val-fer" style="color: var(--iron);">-- T</span>
+                    </div>
+                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
+                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Pétrole</span>
+                        <span id="val-oil" style="color: var(--oil);">-- T</span>
+                    </div>
+                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
+                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Pierre</span>
+                        <span id="val-stone" style="color: var(--stone);">-- T</span>
+                    </div>
+                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
+                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Bois</span>
+                        <span id="val-wood" style="color: var(--wood);">-- T</span>
+                    </div>
+                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
+                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
+                </div>
+                
+                <div class="res-item">
+                    <div class="res-header">
+                        <span>Stock Blé</span>
+                        <span id="val-wheat" style="color: var(--wheat);">-- T</span>
+                    </div>
+                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
+                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
+                </div>
             </div>
 
             <div class="pop-section">
@@ -143,14 +226,47 @@
                 </div>
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
-                <!-- REPARTITION -->
+                <!-- SECTION : Jauges de répartition des travailleurs -->
                 <div class="worker-dist-section">
-                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div><div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div><div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div><div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()"></div>
+                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">
+                        AFFECTATION DES TRAVAILLEURS
+                    </div>
+
+                    <!-- Fer -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Pétrole -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Pierre -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Forêt -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
+                    </div>
+
+                    <!-- Blé -->
+                    <div class="sub-gauge-row">
+                        <div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div>
+                        <div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div>
+                        <input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()">
+                    </div>
+                    
                     <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
                 </div>
             </div>
@@ -257,42 +373,36 @@
         return Math.round(amount * 100) / 100;
     }
 
-    // --- GENERATION DES ZONES DE RESSOURCES (NOUVEAU) ---
+    // --- GENERATION DES ZONES DE RESSOURCES (BALANCEE) ---
     function generateResourceZones(layer, area) {
         resourceLayers.clearLayers();
         
-        // 1. Calculer le nombre de zones (densité)
-        // On veut couvrir 50-70% visuellement. 
-        // Plus le pays est grand, plus on met de zones, mais on plafonne pour la performance.
-        let numZones = Math.max(5, Math.min(30, Math.floor(Math.log(area) * 2)));
-        if (area < 1000) numZones = 3; // Très petits pays
+        // 1. Calculer le nombre de zones (densité) pour un meilleur équilibre
+        // Utilisation d'une formule log/pow pour équilibrer entre 10 et ~30 zones
+        let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
+        numZones = Math.max(10, Math.min(50, numZones));
 
-        // Types de ressources et leurs emojis
         const types = [
-            { id: 'fer', icon: '⛏️', color: '#bdc3c7' },
-            { id: 'oil', icon: '🛢️', color: '#2c3e50' },
-            { id: 'stone', icon: '🧱', color: '#7f8c8d' },
-            { id: 'wood', icon: '🌲', color: '#27ae60' },
-            { id: 'wheat', icon: '🌾', color: '#f1c40f' }
+            { id: 'fer', icon: '⛏️' },
+            { id: 'oil', icon: '🛢️' },
+            { id: 'stone', icon: '🧱' },
+            { id: 'wood', icon: '🌲' },
+            { id: 'wheat', icon: '🌾' }
         ];
 
-        // Convertir le layer Leaflet en GeoJSON pour Turf
         const geoJson = layer.toGeoJSON();
         const bbox = turf.bbox(geoJson);
 
         let zonesCreated = 0;
         let attempts = 0;
-        
-        // On s'assure d'avoir au moins 1 de chaque
         let forcedTypes = [...types]; 
 
-        while (zonesCreated < numZones && attempts < 200) {
+        // 20,000 tentatives pour garantir que même la France (dispersée) ait ses zones
+        while (zonesCreated < numZones && attempts < 20000) {
             attempts++;
             
-            // Point aléatoire dans la Bbox
             const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
             
-            // Vérifier si le point est dans le polygone du pays
             if (turf.booleanPointInPolygon(randomPoint, geoJson)) {
                 
                 let type;
@@ -302,25 +412,21 @@
                     type = types[Math.floor(Math.random() * types.length)];
                 }
 
-                // Créer l'icône
                 const lat = randomPoint.geometry.coordinates[1];
                 const lng = randomPoint.geometry.coordinates[0];
                 
-                // Rayon du cercle visuel (dépend du zoom/taille du pays pour ne pas être énorme ou minuscule)
-                // Approximation simple basée sur la surface
-                const radius = Math.sqrt(area) * 15; 
+                // Rayon dynamique pour couvrir environ 15% de la surface du pays
+                const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
 
-                // Cercle (Zone)
                 const circle = L.circle([lat, lng], {
                     color: '#00d4ff',
                     fillColor: '#00d4ff',
-                    fillOpacity: 0.0, // Invisible par défaut
+                    fillOpacity: 0.0,
                     radius: radius,
                     weight: 1,
-                    opacity: 0 // Bordure invisible par défaut
+                    opacity: 0
                 }).addTo(resourceLayers);
 
-                // Marqueur (Icône)
                 const icon = L.divIcon({
                     className: 'resource-icon',
                     html: `<div style="font-size: 20px;">${type.icon}</div>`,
@@ -330,7 +436,6 @@
 
                 const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
 
-                // Interactions Survol
                 marker.on('mouseover', () => {
                     circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 });
                 });
@@ -338,7 +443,6 @@
                     circle.setStyle({ fillOpacity: 0.0, opacity: 0 });
                 });
                 
-                // Pareil pour le cercle lui-même pour éviter le clignotement
                 circle.on('mouseover', () => {
                     circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 });
                 });
@@ -456,10 +560,7 @@
         if (!selectedLayer) return;
         hqLocked = true;
         
-        // MODIFICATION STYLE : Contour Bleu, Intérieur Transparent
         selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
-        
-        // GÉNÉRER LES ZONES DE RESSOURCES
         generateResourceZones(selectedLayer, currentArea);
 
         document.getElementById('side-menu').classList.add('active');
