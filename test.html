@@ -2,9 +2,9 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Drapeaux Mondiaux</title>
+    <title>OpenFront 1918 - Drapeaux Mondiaux & Ressources</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Ajout de Turf.js pour les calculs géométriques (Points dans polygones) -->
+    <!-- Turf.js pour la répartition intelligente des zones dans les frontières -->
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <style>
         :root { 
@@ -13,9 +13,7 @@
             --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
         }
         
-        * {
-            cursor: crosshair !important;
-        }
+        * { cursor: crosshair !important; }
 
         body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
@@ -32,16 +30,12 @@
             background: #222; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; overflow: hidden;
-            font-size: 3.5em; /* Taille de l'emoji */
+            font-size: 3.5em; 
             border-radius: 12px;
             box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
         }
         
-        #flag-emoji { 
-            line-height: 1;
-            display: block;
-            cursor: default;
-        }
+        #flag-emoji { line-height: 1; display: block; cursor: default; }
 
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
         
@@ -56,32 +50,10 @@
 
         .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* --- STYLE STOCKS (Barres Larges en dessous) --- */
-        .res-item { 
-            display: flex; 
-            flex-direction: column; 
-            margin: 15px 0;         
-            font-size: 0.9em;    
-            border-left: 3px solid var(--blue); 
-            padding-left: 10px; 
-        }
-        
-        .res-header {
-            display: flex;
-            justify-content: space-between; 
-            width: 100%;
-            margin-bottom: 6px; 
-            font-weight: bold;
-        }
-        
-        .res-bar { 
-            width: 100%; 
-            height: 10px; 
-            background: #333; 
-            border-radius: 5px; 
-            overflow: hidden; 
-        }
-        
+        /* Styles Stocks (Barres larges) */
+        .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
+        .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
+        .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
         .res-fill { height: 100%; transition: width 0.5s ease; }
 
         .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
@@ -89,46 +61,48 @@
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
-        /* Styles pour les jauges interactives */
         .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
         .sub-gauge-row { margin-bottom: 12px; }
         .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
         .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
         
-        /* Style des curseurs de priorité */
-        .prio-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            background: #333;
-            outline: none;
-            border-radius: 2px;
-            cursor: pointer;
-        }
-        .prio-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--blue);
-            cursor: pointer;
-            border: 2px solid #000;
-        }
+        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
+        .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
 
         #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
-
         #map { flex-grow: 1; background: #0b0b0b !important; }
         #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
-        
         .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
         
-        /* Style des icônes de ressources sur la carte */
-        .resource-icon {
-            font-size: 16px;
-            text-align: center;
+        /* Styles Icônes Map - SVG Détaillés "Rendus" */
+        .resource-icon { 
+            text-align: center; 
             line-height: 1;
-            /* Pas de background ici, géré par le cercle SVG autour */
+            /* Ombre portée réaliste pour détacher du fond de la carte */
+            filter: drop-shadow(4px 6px 3px rgba(0,0,0,0.8)); 
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .resource-icon:hover {
+            transform: scale(1.4) translateY(-8px);
+            z-index: 2000 !important;
+            filter: drop-shadow(8px 12px 6px rgba(0,0,0,0.9));
+        }
+        
+        /* Bouton QG Stylisé */
+        #btn-hq {
+            background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%); 
+            border: 2px solid #fff; 
+            padding: 12px 24px; 
+            font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
+            font-size: 1.1em; transition: 0.2s; 
+            box-shadow: 0 0 15px var(--blue), inset 0 0 10px rgba(0,0,0,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        #btn-hq:hover { 
+            background: #fff; color: var(--blue); 
+            transform: scale(1.05); 
+            box-shadow: 0 0 25px var(--blue);
         }
     </style>
 </head>
@@ -167,51 +141,11 @@
             <!-- SECTION STOCKS (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
-                
-                <div class="res-item">
-                    <div class="res-header">
-                        <span>Stock Fer</span>
-                        <span id="val-fer" style="color: var(--iron);">-- T</span>
-                    </div>
-                    <!-- Calcul: (0.5 / 1000) * 100 = 0.05% -->
-                    <div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div>
-                </div>
-                
-                <div class="res-item">
-                    <div class="res-header">
-                        <span>Stock Pétrole</span>
-                        <span id="val-oil" style="color: var(--oil);">-- T</span>
-                    </div>
-                    <!-- Calcul: (0.2 / 1000) * 100 = 0.02% -->
-                    <div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div>
-                </div>
-                
-                <div class="res-item">
-                    <div class="res-header">
-                        <span>Stock Pierre</span>
-                        <span id="val-stone" style="color: var(--stone);">-- T</span>
-                    </div>
-                    <!-- Calcul: (1.2 / 1000) * 100 = 0.12% -->
-                    <div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div>
-                </div>
-                
-                <div class="res-item">
-                    <div class="res-header">
-                        <span>Stock Bois</span>
-                        <span id="val-wood" style="color: var(--wood);">-- T</span>
-                    </div>
-                    <!-- Calcul: (2.0 / 1000) * 100 = 0.20% -->
-                    <div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div>
-                </div>
-                
-                <div class="res-item">
-                    <div class="res-header">
-                        <span>Stock Blé</span>
-                        <span id="val-wheat" style="color: var(--wheat);">-- T</span>
-                    </div>
-                    <!-- Calcul: (10.0 / 1000) * 100 = 1.0% -->
-                    <div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div>
-                </div>
+                <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Pétrole</span><span id="val-oil" style="color: var(--oil);">-- T</span></div><div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Pierre</span><span id="val-stone" style="color: var(--stone);">-- T</span></div><div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Bois</span><span id="val-wood" style="color: var(--wood);">-- T</span></div><div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Blé</span><span id="val-wheat" style="color: var(--wheat);">-- T</span></div><div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div></div>
             </div>
 
             <div class="pop-section">
@@ -226,47 +160,13 @@
                 </div>
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
-                <!-- SECTION : Jauges de répartition des travailleurs -->
                 <div class="worker-dist-section">
-                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">
-                        AFFECTATION DES TRAVAILLEURS
-                    </div>
-
-                    <!-- Fer -->
-                    <div class="sub-gauge-row">
-                        <div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div>
-                        <div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div>
-                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
-                    </div>
-
-                    <!-- Pétrole -->
-                    <div class="sub-gauge-row">
-                        <div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div>
-                        <div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div>
-                        <input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()">
-                    </div>
-
-                    <!-- Pierre -->
-                    <div class="sub-gauge-row">
-                        <div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div>
-                        <div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div>
-                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
-                    </div>
-
-                    <!-- Forêt -->
-                    <div class="sub-gauge-row">
-                        <div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div>
-                        <div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div>
-                        <input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()">
-                    </div>
-
-                    <!-- Blé -->
-                    <div class="sub-gauge-row">
-                        <div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div>
-                        <div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div>
-                        <input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()">
-                    </div>
-                    
+                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
+                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div><div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
+                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div><div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()"></div>
+                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div><div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
+                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
+                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()"></div>
                     <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
                 </div>
             </div>
@@ -286,7 +186,7 @@
     const countryDisplay = document.getElementById('country-name');
     let currentWorkerPct = 70; 
     let currentPopulationMillions = 0.5;
-    let resourceLayers = L.layerGroup().addTo(map); // Groupe pour stocker les zones de ressources
+    let resourceLayers = L.layerGroup().addTo(map);
 
     const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹", "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧", "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹", "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳", "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭", "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬", "Democratic Republic of the Congo": "🇨🇩", "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿", "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱", "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷", "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮", "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪", "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳", "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺", "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰", "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧", "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹", "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻", "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺", "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳", "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮", "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴", "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦", "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼", "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲", "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨", "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧", "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸", "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱", "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺", "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭", "Falkland Islands": "🇫🇰" };
 
@@ -373,21 +273,133 @@
         return Math.round(amount * 100) / 100;
     }
 
-    // --- GENERATION DES ZONES DE RESSOURCES (BALANCEE) ---
+    // --- GENERATION DES ZONES DE RESSOURCES (ICONES SVG DÉTAILLÉES) ---
     function generateResourceZones(layer, area) {
         resourceLayers.clearLayers();
-        
-        // 1. Calculer le nombre de zones (densité) pour un meilleur équilibre
-        // Utilisation d'une formule log/pow pour équilibrer entre 10 et ~30 zones
         let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
         numZones = Math.max(10, Math.min(50, numZones));
 
         const types = [
-            { id: 'fer', icon: '⛏️' },
-            { id: 'oil', icon: '🛢️' },
-            { id: 'stone', icon: '🧱' },
-            { id: 'wood', icon: '🌲' },
-            { id: 'wheat', icon: '🌾' }
+            // Mine (Fer)
+            { id: 'fer', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient>
+                        <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient>
+                    </defs>
+                    <!-- Montagne -->
+                    <path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/>
+                    <!-- Entrée sombre -->
+                    <path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/>
+                    <!-- Poutres en bois -->
+                    <path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Rails -->
+                    <path d="M26 60 L24 64 M38 60 L40 64" stroke="#212121" stroke-width="2"/>
+                    <path d="M22 62 H42" stroke="#3e2723" stroke-width="2"/>
+                    <!-- Wagon -->
+                    <rect x="26" y="50" width="12" height="8" fill="#455a64" stroke="#000" stroke-width="1"/>
+                    <circle cx="28" cy="58" r="2" fill="#000"/>
+                    <circle cx="36" cy="58" r="2" fill="#000"/>
+                    <rect x="27" y="51" width="10" height="3" fill="#cfd8dc"/> <!-- Ore inside -->
+                </svg>` 
+            },
+            
+            // Chevalet (Pétrole) + Barils
+            { id: 'oil', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b0bec5"/><stop offset="100%" stop-color="#455a64"/></linearGradient>
+                    </defs>
+                    <rect x="10" y="54" width="44" height="6" fill="#78909c" stroke="#37474f"/>
+                    <path d="M28 54 L32 25 L36 54" fill="none" stroke="#37474f" stroke-width="3"/>
+                    <path d="M10 32 L54 22" stroke="#c62828" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M10 32 L10 45" stroke="#37474f" stroke-width="1"/>
+                    <rect x="8" y="45" width="4" height="6" fill="#37474f"/>
+                    <rect x="50" y="18" width="8" height="10" fill="#546e7a" stroke="#000"/>
+                    <path d="M54 28 V54" stroke="#000" stroke-width="1"/>
+                    <!-- Barils -->
+                    <path d="M46 58 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
+                    <path d="M54 54 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
+                </svg>` 
+            },
+            
+            // Carrière (Pierre) + Petites pierres
+            { id: 'stone', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient>
+                    </defs>
+                    <path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/>
+                    <path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/>
+                    <path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/>
+                    <circle cx="16" cy="54" r="4" fill="#6d4c41"/>
+                    <circle cx="48" cy="52" r="5" fill="#5d4037"/>
+                    <circle cx="50" cy="20" r="3" fill="#795548"/>
+                    <path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/>
+                    <!-- Petites pierres -->
+                    <path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/>
+                    <path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/>
+                    <!-- Crane hint -->
+                    <line x1="50" y1="14" x2="50" y2="40" stroke="#212121" stroke-width="1"/>
+                    <line x1="50" y1="14" x2="35" y2="30" stroke="#212121" stroke-width="1"/>
+                </svg>` 
+            },
+            
+            // Forêt (Bois) + Troncs coupés
+            { id: 'wood', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
+                    </defs>
+                    <!-- Arbres du fond -->
+                    <path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/>
+                    <path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/>
+                    <path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/>
+                    
+                    <!-- Arbres de devant -->
+                    <path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/>
+                    <rect x="12" y="55" width="4" height="6" fill="#3e2723"/>
+                    
+                    <path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/>
+                    <rect x="48" y="55" width="4" height="6" fill="#3e2723"/>
+                    
+                    <path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/> <!-- Arbre central -->
+                    <rect x="30" y="58" width="4" height="6" fill="#5d4037"/>
+                    <!-- Troncs coupés -->
+                    <circle cx="50" cy="58" r="2.5" fill="#d7ccc8" stroke="#5d4037"/>
+                    <rect x="35" y="55.5" width="15" height="4" fill="#8d6e63" rx="2"/>
+                </svg>` 
+            },
+            
+            // Champ (Blé) + Moissonneuse-batteuse
+            { id: 'wheat', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <!-- Sol -->
+                    <rect x="2" y="35" width="60" height="25" fill="#f9a825" rx="4" />
+                    
+                    <!-- Texture champ -->
+                    <path d="M4 35 Q10 45 16 35 T28 35 T40 35 T52 35 T64 35" stroke="#fbc02d" stroke-width="2" fill="none"/>
+                    <path d="M4 45 Q10 55 16 45 T28 45 T40 45 T52 45 T64 45" stroke="#fbc02d" stroke-width="2" fill="none"/>
+                    
+                    <!-- Epis -->
+                    <path d="M10 35 V20" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="10" cy="20" rx="3" ry="6" fill="#fdd835"/>
+                    
+                    <path d="M25 40 V15" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="25" cy="15" rx="4" ry="8" fill="#fdd835"/>
+                    
+                    <path d="M40 37 V17" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="40" cy="17" rx="4" ry="7" fill="#fdd835"/>
+                    
+                    <!-- Moissonneuse -->
+                    <rect x="45" y="32" width="16" height="10" fill="#c0392b"/> <!-- Body -->
+                    <circle cx="48" cy="42" r="3" fill="#212121"/> <!-- Wheel -->
+                    <circle cx="58" cy="42" r="3" fill="#212121"/> <!-- Wheel -->
+                    <rect x="58" y="34" width="4" height="8" fill="#fdd835"/> <!-- Header -->
+                </svg>` 
+            }
         ];
 
         const geoJson = layer.toGeoJSON();
@@ -397,59 +409,33 @@
         let attempts = 0;
         let forcedTypes = [...types]; 
 
-        // 20,000 tentatives pour garantir que même la France (dispersée) ait ses zones
         while (zonesCreated < numZones && attempts < 20000) {
             attempts++;
-            
             const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
-            
             if (turf.booleanPointInPolygon(randomPoint, geoJson)) {
-                
                 let type;
                 if (forcedTypes.length > 0) {
                     type = forcedTypes.pop();
                 } else {
                     type = types[Math.floor(Math.random() * types.length)];
                 }
-
                 const lat = randomPoint.geometry.coordinates[1];
                 const lng = randomPoint.geometry.coordinates[0];
-                
-                // Rayon dynamique pour couvrir environ 15% de la surface du pays
                 const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
-
                 const circle = L.circle([lat, lng], {
-                    color: '#00d4ff',
-                    fillColor: '#00d4ff',
-                    fillOpacity: 0.0,
-                    radius: radius,
-                    weight: 1,
-                    opacity: 0
+                    color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: radius, weight: 1, opacity: 0
                 }).addTo(resourceLayers);
-
                 const icon = L.divIcon({
                     className: 'resource-icon',
-                    html: `<div style="font-size: 20px;">${type.icon}</div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
+                    html: `<div>${type.icon}</div>`,
+                    iconSize: [56, 56],
+                    iconAnchor: [28, 28]
                 });
-
                 const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
-
-                marker.on('mouseover', () => {
-                    circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 });
-                });
-                marker.on('mouseout', () => {
-                    circle.setStyle({ fillOpacity: 0.0, opacity: 0 });
-                });
-                
-                circle.on('mouseover', () => {
-                    circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 });
-                });
-                circle.on('mouseout', () => {
-                    circle.setStyle({ fillOpacity: 0.0, opacity: 0 });
-                });
-
+                marker.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
+                marker.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
+                circle.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
+                circle.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
                 zonesCreated++;
             }
         }
@@ -470,11 +456,8 @@
                     countryDisplay.innerText = name.toUpperCase();
                     flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
                 });
-
                 layer.on('mouseout', function() {
-                    if (this !== selectedLayer) {
-                        this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' });
-                    }
+                    if (this !== selectedLayer) { this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' }); }
                     if(hqLocked) return;
                     if (selectedLayer) {
                         const p = selectedLayer.feature.properties;
@@ -487,7 +470,6 @@
                         flagDisplay.innerText = "🌐";
                     }
                 });
-
                 layer.on('click', function() {
                     if(hqLocked) return;
                     if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
@@ -502,21 +484,12 @@
 
                     currentArea = getArea(name, layer);
 
-                    let basePop = 0.5; 
-                    let resMultiplier = 1.0;
-                    let calculatedPop = 0.5;
-
-                    if (currentArea < 800) {
-                        resMultiplier = 6.0; calculatedPop = basePop * 7.0; 
-                    } else if (currentArea < 2100) {
-                        resMultiplier = 5.0; calculatedPop = basePop * 4.0;
-                    } else if (currentArea < 23000) {
-                        resMultiplier = 3.0; calculatedPop = basePop * 2.0; 
-                    } else if (currentArea < 94000) {
-                        resMultiplier = 2.0; calculatedPop = basePop * 1.4; 
-                    } else {
-                        resMultiplier = 1.0; calculatedPop = basePop; 
-                    }
+                    let basePop = 0.5; let resMultiplier = 1.0; let calculatedPop = 0.5;
+                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; } 
+                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; } 
+                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; } 
+                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; } 
+                    else { resMultiplier = 1.0; calculatedPop = basePop; }
 
                     currentPopulationMillions = calculatedPop;
                     document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
@@ -548,9 +521,7 @@
                     document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
 
                     document.getElementById('action-zone').innerHTML = `
-                        <button onclick="lockHQ()" style="background:var(--blue); border:none; padding:10px 20px; font-weight:bold; color:black; cursor:pointer; border-radius:4px;">
-                            ÉTABLIR QG
-                        </button>`;
+                        <button id="btn-hq" onclick="lockHQ()">ÉTABLIR QG</button>`;
                 });
             }
         }).addTo(map);
@@ -559,26 +530,18 @@
     window.lockHQ = function() {
         if (!selectedLayer) return;
         hqLocked = true;
-        
         selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
         generateResourceZones(selectedLayer, currentArea);
-
         document.getElementById('side-menu').classList.add('active');
         document.getElementById('toggle-btn').style.display = 'block';
         document.getElementById('toggle-btn').style.left = "320px";
-        
         const areaStr = currentArea.toLocaleString('fr-FR');
         document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
-        
-        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold;">PROFIL ACTIVÉ</span>`;
+        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold; font-size:1.2em;">PROFIL ACTIVÉ</span>`;
         map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
-        
         if (window.gameTimer) clearInterval(window.gameTimer);
         const timerEl = document.getElementById('timer');
-        if(timerEl) {
-            timerEl.innerText = "OK";
-            timerEl.style.color = "var(--green)";
-        }
+        if(timerEl) { timerEl.innerText = "OK"; timerEl.style.color = "var(--green)"; }
     };
 
     window.toggleMenu = function() {
