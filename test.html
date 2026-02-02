@@ -4,25 +4,60 @@
     <meta charset="UTF-8">
     <title>OpenFront 1918 - Drapeaux Mondiaux & Ressources</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Turf.js pour la répartition intelligente des zones dans les frontières -->
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <style>
+        /* --- DÉFINITION DES COULEURS (Variables CSS) --- */
         :root { 
+            /* Couleurs d'accentuation (restent les mêmes) */
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
-            --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
+            
+            /* Thème SOMBRE par défaut */
+            --bg: #111; 
+            --header-bg: #000; 
+            --text: #fff; 
+            --panel: #1a1a1a; 
+            --panel-inner: #000;
+            --border: #333;
+            --slider-track: #333;
+            
+            /* Couleurs Ressources */
             --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
+        }
+
+        /* --- MODE CLAIR (Surcharge les variables) --- */
+        body.light-mode {
+            --bg: #bdc3c7;
+            --header-bg: #ecf0f1;
+            --text: #2c3e50;
+            --panel: #ffffff;
+            --panel-inner: #f7f9f9;
+            --border: #bdc3c7;
+            --slider-track: #e0e0e0;
+            
+            /* Ajustement contraste ressources pour fond clair */
+            --iron: #7f8c8d; --stone: #596263; --oil: #2c3e50;
         }
         
         * { cursor: crosshair !important; }
 
-        body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; transition: background 0.3s, color 0.3s; }
 
         #info-header {
             width: 100%; height: 120px;
             background: var(--header-bg); color: var(--text);
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 4px solid var(--blue); box-sizing: border-box; padding: 0 30px; z-index: 1001;
+            transition: background 0.3s;
         }
+
+        /* Bouton Thème */
+        .theme-toggle {
+            background: var(--panel); border: 2px solid var(--border);
+            color: var(--text); padding: 8px 12px; border-radius: 20px;
+            cursor: pointer; font-size: 1.2em; margin-right: 15px;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center;
+        }
+        .theme-toggle:hover { border-color: var(--blue); }
 
         .flag-frame { 
             width: 110px; height: 80px; 
@@ -40,7 +75,7 @@
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
         
         #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; 
             color: var(--text); display: flex; flex-direction: column; z-index: 1000;
         }
         #side-menu.active { width: 320px; border-right: 2px solid var(--blue); }
@@ -48,62 +83,51 @@
         .menu-content { width: 300px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .money-box { background: var(--panel-inner); padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.3s; }
         
-        /* Styles Stocks (Barres larges) */
+        /* Styles Stocks */
         .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
         .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
-        .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .res-bar { width: 100%; height: 10px; background: var(--slider-track); border-radius: 5px; overflow: hidden; }
         .res-fill { height: 100%; transition: width 0.5s ease; }
 
-        .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
-        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
+        .pop-section { margin-top: 30px; padding: 15px; background: var(--panel-inner); border: 1px solid var(--border); border-radius: 8px; transition: background 0.3s; }
+        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
-        .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
+        .worker-dist-section { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; }
         .sub-gauge-row { margin-bottom: 12px; }
-        .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+        .sub-gauge-label { font-size: 0.75em; color: var(--text); opacity: 0.7; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .sub-gauge-track { width: 100%; height: 6px; background: var(--slider-track); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
         
-        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
+        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: var(--slider-track); outline: none; border-radius: 2px; cursor: pointer; }
         .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
 
-        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
-        #map { flex-grow: 1; background: #0b0b0b !important; }
+        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; color: #000; }
+        
+        /* Map container background is handled by Leaflet, but we set a default */
+        #map { flex-grow: 1; background: var(--bg) !important; transition: background 0.3s; }
+        
         #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
         .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
         
-        /* Styles Icônes Map - SVG Détaillés "Rendus" */
+        /* Styles Icônes Map */
         .resource-icon { 
-            text-align: center; 
-            line-height: 1;
-            /* Ombre portée réaliste pour détacher du fond de la carte */
+            text-align: center; line-height: 1;
             filter: drop-shadow(4px 6px 3px rgba(0,0,0,0.8)); 
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .resource-icon:hover {
-            transform: scale(1.4) translateY(-8px);
-            z-index: 2000 !important;
-            filter: drop-shadow(8px 12px 6px rgba(0,0,0,0.9));
-        }
+        /* Ajustement de l'ombre en mode clair via CSS global si besoin, mais ici SVG ok */
+        .resource-icon:hover { transform: scale(1.4) translateY(-8px); z-index: 2000 !important; }
         
-        /* Bouton QG Stylisé */
         #btn-hq {
             background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%); 
-            border: 2px solid #fff; 
-            padding: 12px 24px; 
-            font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
-            font-size: 1.1em; transition: 0.2s; 
-            box-shadow: 0 0 15px var(--blue), inset 0 0 10px rgba(0,0,0,0.2);
-            text-transform: uppercase; letter-spacing: 1px;
+            border: 2px solid #fff; padding: 12px 24px; font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
+            font-size: 1.1em; transition: 0.2s; box-shadow: 0 0 15px var(--blue); text-transform: uppercase; letter-spacing: 1px;
         }
-        #btn-hq:hover { 
-            background: #fff; color: var(--blue); 
-            transform: scale(1.05); 
-            box-shadow: 0 0 25px var(--blue);
-        }
+        #btn-hq:hover { background: #fff; color: var(--blue); transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -115,7 +139,13 @@
 </div>
 
 <header id="info-header">
-    <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
+    <div style="display:flex; align-items:center;">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
+            <span id="theme-icon">☀️</span>
+        </button>
+        <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
+    </div>
+    
     <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
         <div class="flag-frame"><span id="flag-emoji">🌐</span></div>
         <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">INITIALISATION...</div>
@@ -127,7 +157,6 @@
     <div id="side-menu">
         <div class="menu-content">
             <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
-            <!-- Modification: Couleur verte appliquée -->
             <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
 
             <div class="money-box">
@@ -138,7 +167,6 @@
                 </div>
             </div>
 
-            <!-- SECTION STOCKS (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
                 <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
@@ -161,13 +189,13 @@
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
                 <div class="worker-dist-section">
-                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
+                    <div style="font-size: 0.75em; color: var(--text); margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div><div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div><div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div><div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()"></div>
-                    <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
+                    <div style="font-size: 0.65em; color: var(--text); opacity:0.6; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
                 </div>
             </div>
         </div>
@@ -178,8 +206,58 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // --- GESTION DU THÈME ---
+    const mapEl = document.getElementById('map');
+    let isLightMode = false;
+    let currentTileLayer;
+    
+    // URLs des tuiles
+    const darkTiles = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
+    const lightTiles = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+
+    // Initialisation Carte
     const map = L.map('map', { attributionControl: false, zoomControl: false, minZoom: 2, maxBounds: [[-90, -180], [90, 180]] }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
+    
+    // Ajout de la couche par défaut (Sombre)
+    currentTileLayer = L.tileLayer(darkTiles, { noWrap: true }).addTo(map);
+
+    function toggleTheme() {
+        isLightMode = !isLightMode;
+        document.body.classList.toggle('light-mode');
+        
+        // Changer l'icône du bouton
+        document.getElementById('theme-icon').innerText = isLightMode ? "🌑" : "☀️";
+        
+        // Changer les tuiles de la carte
+        map.removeLayer(currentTileLayer);
+        currentTileLayer = L.tileLayer(isLightMode ? lightTiles : darkTiles, { noWrap: true }).addTo(map);
+        
+        // Mettre à jour le style des pays si déjà chargés
+        if(geojsonLayer) {
+            geojsonLayer.setStyle(getCountryStyle);
+            // Si un pays est sélectionné, réappliquer le style de sélection
+            if(selectedLayer) {
+                selectedLayer.setStyle({
+                    weight: 3,
+                    color: '#00d4ff',
+                    fillOpacity: isLightMode ? 0.6 : 0.4,
+                    dashArray: ''
+                });
+            }
+        }
+    }
+
+    // Style dynamique des pays selon le mode
+    function getCountryStyle(feature) {
+        return {
+            fillColor: isLightMode ? '#95a5a6' : '#2c3e50', // Gris clair vs Gris foncé
+            weight: 1,
+            opacity: 1,
+            color: isLightMode ? '#7f8c8d' : '#111', // Bordures
+            dashArray: '3',
+            fillOpacity: isLightMode ? 0.3 : 0.2
+        };
+    }
 
     let hqLocked = false, selectedLayer = null, timeLeft = 15, currentArea = 0;
     const flagDisplay = document.getElementById('flag-emoji');
@@ -273,284 +351,156 @@
         return Math.round(amount * 100) / 100;
     }
 
-    // --- GENERATION DES ZONES DE RESSOURCES (ICONES SVG DÉTAILLÉES) ---
     function generateResourceZones(layer, area) {
         resourceLayers.clearLayers();
         let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
         numZones = Math.max(10, Math.min(50, numZones));
 
         const types = [
-            // Mine (Fer)
-            { id: 'fer', icon: `
-                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
-                    <defs>
-                        <linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient>
-                        <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient>
-                    </defs>
-                    <!-- Montagne -->
-                    <path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/>
-                    <!-- Entrée sombre -->
-                    <path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/>
-                    <!-- Poutres en bois -->
-                    <path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/>
-                    <!-- Rails -->
-                    <path d="M26 60 L24 64 M38 60 L40 64" stroke="#212121" stroke-width="2"/>
-                    <path d="M22 62 H42" stroke="#3e2723" stroke-width="2"/>
-                    <!-- Wagon -->
-                    <rect x="26" y="50" width="12" height="8" fill="#455a64" stroke="#000" stroke-width="1"/>
-                    <circle cx="28" cy="58" r="2" fill="#000"/>
-                    <circle cx="36" cy="58" r="2" fill="#000"/>
-                    <rect x="27" y="51" width="10" height="3" fill="#cfd8dc"/> <!-- Ore inside -->
-                </svg>` 
-            },
-            
-            // Chevalet (Pétrole) + Barils
-            { id: 'oil', icon: `
-                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
-                    <defs>
-                        <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b0bec5"/><stop offset="100%" stop-color="#455a64"/></linearGradient>
-                    </defs>
-                    <rect x="10" y="54" width="44" height="6" fill="#78909c" stroke="#37474f"/>
-                    <path d="M28 54 L32 25 L36 54" fill="none" stroke="#37474f" stroke-width="3"/>
-                    <path d="M10 32 L54 22" stroke="#c62828" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M10 32 L10 45" stroke="#37474f" stroke-width="1"/>
-                    <rect x="8" y="45" width="4" height="6" fill="#37474f"/>
-                    <rect x="50" y="18" width="8" height="10" fill="#546e7a" stroke="#000"/>
-                    <path d="M54 28 V54" stroke="#000" stroke-width="1"/>
-                    <!-- Barils -->
-                    <path d="M46 58 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
-                    <path d="M54 54 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
-                </svg>` 
-            },
-            
-            // Carrière (Pierre) + Petites pierres
-            { id: 'stone', icon: `
-                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
-                    <defs>
-                        <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient>
-                    </defs>
-                    <path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/>
-                    <path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/>
-                    <path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/>
-                    <circle cx="16" cy="54" r="4" fill="#6d4c41"/>
-                    <circle cx="48" cy="52" r="5" fill="#5d4037"/>
-                    <circle cx="50" cy="20" r="3" fill="#795548"/>
-                    <path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/>
-                    <!-- Petites pierres -->
-                    <path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/>
-                    <path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/>
-                    <!-- Crane hint -->
-                    <line x1="50" y1="14" x2="50" y2="40" stroke="#212121" stroke-width="1"/>
-                    <line x1="50" y1="14" x2="35" y2="30" stroke="#212121" stroke-width="1"/>
-                </svg>` 
-            },
-            
-            // Forêt (Bois) + Troncs coupés
-            { id: 'wood', icon: `
-                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
-                    <defs>
-                        <linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
-                    </defs>
-                    <!-- Arbres du fond -->
-                    <path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/>
-                    <path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/>
-                    <path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/>
-                    
-                    <!-- Arbres de devant -->
-                    <path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/>
-                    <rect x="12" y="55" width="4" height="6" fill="#3e2723"/>
-                    
-                    <path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/>
-                    <rect x="48" y="55" width="4" height="6" fill="#3e2723"/>
-                    
-                    <path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/> <!-- Arbre central -->
-                    <rect x="30" y="58" width="4" height="6" fill="#5d4037"/>
-                    <!-- Troncs coupés -->
-                    <circle cx="50" cy="58" r="2.5" fill="#d7ccc8" stroke="#5d4037"/>
-                    <rect x="35" y="55.5" width="15" height="4" fill="#8d6e63" rx="2"/>
-                </svg>` 
-            },
-            
-            // Champ (Blé) + Moissonneuse-batteuse
-            { id: 'wheat', icon: `
-                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
-                    <!-- Sol -->
-                    <rect x="2" y="35" width="60" height="25" fill="#f9a825" rx="4" />
-                    
-                    <!-- Texture champ -->
-                    <path d="M4 35 Q10 45 16 35 T28 35 T40 35 T52 35 T64 35" stroke="#fbc02d" stroke-width="2" fill="none"/>
-                    <path d="M4 45 Q10 55 16 45 T28 45 T40 45 T52 45 T64 45" stroke="#fbc02d" stroke-width="2" fill="none"/>
-                    
-                    <!-- Epis -->
-                    <path d="M10 35 V20" stroke="#f9a825" stroke-width="2"/>
-                    <ellipse cx="10" cy="20" rx="3" ry="6" fill="#fdd835"/>
-                    
-                    <path d="M25 40 V15" stroke="#f9a825" stroke-width="2"/>
-                    <ellipse cx="25" cy="15" rx="4" ry="8" fill="#fdd835"/>
-                    
-                    <path d="M40 37 V17" stroke="#f9a825" stroke-width="2"/>
-                    <ellipse cx="40" cy="17" rx="4" ry="7" fill="#fdd835"/>
-                    
-                    <!-- Moissonneuse -->
-                    <rect x="45" y="32" width="16" height="10" fill="#c0392b"/> <!-- Body -->
-                    <circle cx="48" cy="42" r="3" fill="#212121"/> <!-- Wheel -->
-                    <circle cx="58" cy="42" r="3" fill="#212121"/> <!-- Wheel -->
-                    <rect x="58" y="34" width="4" height="8" fill="#fdd835"/> <!-- Header -->
-                </svg>` 
-            }
+            { id: 'fer', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient><linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient></defs><path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/><path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/><path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M26 60 L24 64 M38 60 L40 64" stroke="#212121" stroke-width="2"/><path d="M22 62 H42" stroke="#3e2723" stroke-width="2"/><rect x="26" y="50" width="12" height="8" fill="#455a64" stroke="#000" stroke-width="1"/><circle cx="28" cy="58" r="2" fill="#000"/><circle cx="36" cy="58" r="2" fill="#000"/><rect x="27" y="51" width="10" height="3" fill="#cfd8dc"/></svg>` },
+            { id: 'oil', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b0bec5"/><stop offset="100%" stop-color="#455a64"/></linearGradient></defs><rect x="10" y="54" width="44" height="6" fill="#78909c" stroke="#37474f"/><path d="M28 54 L32 25 L36 54" fill="none" stroke="#37474f" stroke-width="3"/><path d="M10 32 L54 22" stroke="#c62828" stroke-width="4" stroke-linecap="round"/><path d="M10 32 L10 45" stroke="#37474f" stroke-width="1"/><rect x="8" y="45" width="4" height="6" fill="#37474f"/><rect x="50" y="18" width="8" height="10" fill="#546e7a" stroke="#000"/><path d="M54 28 V54" stroke="#000" stroke-width="1"/><path d="M46 58 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/><path d="M54 54 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/></svg>` },
+            { id: 'stone', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient></defs><path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/><path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/><path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/><circle cx="16" cy="54" r="4" fill="#6d4c41"/><circle cx="48" cy="52" r="5" fill="#5d4037"/><circle cx="50" cy="20" r="3" fill="#795548"/><path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/><path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/><path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/><line x1="50" y1="14" x2="50" y2="40" stroke="#212121" stroke-width="1"/><line x1="50" y1="14" x2="35" y2="30" stroke="#212121" stroke-width="1"/></svg>` },
+            { id: 'wood', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient></defs><path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/><path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/><path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/><path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/><rect x="12" y="55" width="4" height="6" fill="#3e2723"/><path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/><rect x="48" y="55" width="4" height="6" fill="#3e2723"/><path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/><rect x="30" y="58" width="4" height="6" fill="#3e2723"/><circle cx="10" cy="58" r="3" fill="#5d4037"/><circle cx="16" cy="58" r="3" fill="#5d4037"/></svg>` },
+            { id: 'wheat', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="wheatGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffd54f"/><stop offset="100%" stop-color="#ff6f00"/></linearGradient></defs><ellipse cx="32" cy="58" rx="28" ry="6" fill="#5d4037"/><path d="M10 58 Q15 40 10 25" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M14 58 Q19 40 14 28" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M50 58 Q45 40 50 25" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M46 58 Q41 40 46 28" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M20 56 V35 L32 25 L44 35 V56 Z" fill="#b71c1c" stroke="#3e2723" stroke-width="1"/><path d="M32 25 L20 35 H44 Z" fill="#e53935"/><rect x="28" y="42" width="8" height="14" fill="#3e2723"/><path d="M28 42 L32 56 L36 42" stroke="#5d4037" stroke-width="1"/><path d="M26 60 Q20 40 22 30" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="22" cy="30" rx="3" ry="6" fill="#ffd54f"/><path d="M38 60 Q44 40 42 30" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="42" cy="30" rx="3" ry="6" fill="#ffd54f"/><path d="M32 60 Q32 40 32 28" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="32" cy="28" rx="3" ry="7" fill="#ffd54f"/></svg>` }
         ];
 
-        const geoJson = layer.toGeoJSON();
-        const bbox = turf.bbox(geoJson);
-
-        let zonesCreated = 0;
+        const bounds = layer.getBounds();
+        const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+        const polygonFeature = layer.toGeoJSON();
+        let placed = 0;
         let attempts = 0;
-        let forcedTypes = [...types]; 
-
-        while (zonesCreated < numZones && attempts < 20000) {
+        
+        while (placed < numZones && attempts < numZones * 5) {
             attempts++;
-            const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
-            if (turf.booleanPointInPolygon(randomPoint, geoJson)) {
-                let type;
-                if (forcedTypes.length > 0) {
-                    type = forcedTypes.pop();
-                } else {
-                    type = types[Math.floor(Math.random() * types.length)];
-                }
-                const lat = randomPoint.geometry.coordinates[1];
-                const lng = randomPoint.geometry.coordinates[0];
-                const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
-                const circle = L.circle([lat, lng], {
-                    color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: radius, weight: 1, opacity: 0
-                }).addTo(resourceLayers);
+            const randomPt = turf.randomPoint(1, { bbox: bbox });
+            if (turf.booleanPointInPolygon(randomPt.features[0], polygonFeature)) {
+                const coords = randomPt.features[0].geometry.coordinates;
+                const type = types[Math.floor(Math.random() * types.length)];
                 const icon = L.divIcon({
                     className: 'resource-icon',
-                    html: `<div>${type.icon}</div>`,
+                    html: type.icon,
                     iconSize: [56, 56],
-                    iconAnchor: [28, 28]
+                    iconAnchor: [28, 56]
                 });
-                const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
-                marker.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
-                marker.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
-                circle.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
-                circle.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
-                zonesCreated++;
+                L.marker([coords[1], coords[0]], { icon: icon }).addTo(resourceLayers);
+                placed++;
             }
         }
     }
 
-    fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
-    .then(r => r.json())
-    .then(data => {
-        L.geoJson(data, {
-            style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
-            onEachFeature: (feature, layer) => {
-                layer.on('mouseover', function() {
-                    if(hqLocked) return;
-                    this.setStyle({ fillOpacity: 0.9, fillColor: '#444', color: '#00d4ff' });
-                    const props = feature.properties;
-                    const name = props.ADMIN || props.name || "Inconnu";
-                    const iso = props.ISO_A2 || props.iso_a2 || "";
-                    countryDisplay.innerText = name.toUpperCase();
-                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
-                });
-                layer.on('mouseout', function() {
-                    if (this !== selectedLayer) { this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' }); }
-                    if(hqLocked) return;
-                    if (selectedLayer) {
-                        const p = selectedLayer.feature.properties;
-                        const name = p.ADMIN || p.name;
-                        const iso = p.ISO_A2 || p.iso_a2 || "";
-                        countryDisplay.innerText = name.toUpperCase();
-                        flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
-                    } else {
-                        countryDisplay.innerText = "SÉLECTIONNEZ UNE ZONE";
-                        flagDisplay.innerText = "🌐";
-                    }
-                });
-                layer.on('click', function() {
-                    if(hqLocked) return;
-                    if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
-                    selectedLayer = this;
-                    this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
-                    
-                    const p = feature.properties;
-                    const name = p.ADMIN || p.name;
-                    const iso = p.ISO_A2 || p.iso_a2 || "";
-                    countryDisplay.innerText = name.toUpperCase();
-                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
-
-                    currentArea = getArea(name, layer);
-
-                    let basePop = 0.5; let resMultiplier = 1.0; let calculatedPop = 0.5;
-                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; } 
-                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; } 
-                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; } 
-                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; } 
-                    else { resMultiplier = 1.0; calculatedPop = basePop; }
-
-                    currentPopulationMillions = calculatedPop;
-                    document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
-                    window.updateWorkerDistribution(); 
-
-                    const budget = calculateBudget(currentArea);
-                    document.getElementById('money-val').innerText = budget.toLocaleString('en-US').replace(/,/g, ' ') + " $";
-
-                    const capMax = 1000; 
-
-                    let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
-                    document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
-
-                    let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
-                    document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
-
-                    let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
-                    document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
-
-                    let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
-                    document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
-
-                    let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
-                    document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
-
-                    document.getElementById('action-zone').innerHTML = `
-                        <button id="btn-hq" onclick="lockHQ()">ÉTABLIR QG</button>`;
-                });
-            }
-        }).addTo(map);
-    });
-
-    window.lockHQ = function() {
-        if (!selectedLayer) return;
-        hqLocked = true;
-        selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
-        generateResourceZones(selectedLayer, currentArea);
-        document.getElementById('side-menu').classList.add('active');
-        document.getElementById('toggle-btn').style.display = 'block';
-        document.getElementById('toggle-btn').style.left = "320px";
-        const areaStr = currentArea.toLocaleString('fr-FR');
-        document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
-        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold; font-size:1.2em;">PROFIL ACTIVÉ</span>`;
-        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
-        if (window.gameTimer) clearInterval(window.gameTimer);
-        const timerEl = document.getElementById('timer');
-        if(timerEl) { timerEl.innerText = "OK"; timerEl.style.color = "var(--green)"; }
-    };
-
-    window.toggleMenu = function() {
+    function toggleMenu() {
         const menu = document.getElementById('side-menu');
         const btn = document.getElementById('toggle-btn');
-        const isOpen = menu.classList.toggle('active');
-        btn.innerText = isOpen ? "<" : ">";
-        btn.style.left = isOpen ? "320px" : "0";
-    };
+        menu.classList.toggle('active');
+        btn.innerHTML = menu.classList.contains('active') ? "<" : ">";
+        btn.style.left = menu.classList.contains('active') ? "320px" : "0";
+    }
+
+    function establishHQ() {
+        if (hqLocked || !selectedLayer) return;
+        
+        hqLocked = true;
+        clearInterval(window.gameTimer);
+        document.getElementById('timer').style.color = "#2ecc71";
+        document.getElementById('timer').innerText = "OK";
+        
+        document.getElementById('hq-name').innerText = "QG OPÉRATIONNEL : " + countryDisplay.innerText;
+        document.getElementById('action-zone').innerHTML = '<div style="color:var(--green); font-weight:bold; border:2px solid var(--green); padding:5px 15px; border-radius:4px;">ORDRES EN COURS</div>';
+        
+        const area = getArea(countryDisplay.innerText, selectedLayer);
+        const budget = calculateBudget(area);
+        const pop = Math.max(0.1, (area / 100000) * (0.5 + Math.random())); 
+        currentPopulationMillions = pop;
+
+        document.getElementById('money-val').innerText = budget.toLocaleString('fr-FR') + " $";
+        document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(pop);
+
+        const resources = ['fer', 'oil', 'stone', 'wood', 'wheat'];
+        resources.forEach(res => {
+            const val = calculateResource(area, 50, 900);
+            document.getElementById(`val-${res}`).innerText = Math.floor(val) + " T";
+            document.getElementById(`stock-${res}`).style.width = (val / 10) + "%"; 
+        });
+
+        generateResourceZones(selectedLayer, area);
+        
+        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50], maxZoom: 5 });
+        
+        setTimeout(() => {
+            if (!document.getElementById('side-menu').classList.contains('active')) {
+                toggleMenu();
+            }
+            updateMainRatio(30); 
+        }, 800);
+    }
+
+    function onCountryClick(e) {
+        if (hqLocked) return;
+        
+        if (selectedLayer) {
+            geojsonLayer.resetStyle(selectedLayer);
+        }
+        
+        selectedLayer = e.target;
+        selectedLayer.setStyle({
+            weight: 3,
+            color: '#00d4ff',
+            fillOpacity: isLightMode ? 0.6 : 0.4,
+            dashArray: ''
+        });
+        
+        selectedLayer.bringToFront();
+        map.fitBounds(e.target.getBounds(), { padding: [20, 20], maxZoom: 4 });
+
+        const props = e.target.feature.properties;
+        const name = props.name || "Territoire Inconnu";
+        const iso = props.iso_a2 || "-99";
+
+        countryDisplay.innerText = name;
+        flagDisplay.innerText = getFlagEmoji(iso, name);
+        
+        const actionZone = document.getElementById('action-zone');
+        actionZone.innerHTML = `<button id="btn-hq" onclick="establishHQ()">ÉTABLIR QG ICI</button>`;
+    }
+
+    function onEachFeature(feature, layer) {
+        layer.on({
+            click: onCountryClick,
+            mouseover: function(e) {
+                if(hqLocked) return;
+                const layer = e.target;
+                layer.setStyle({ fillOpacity: isLightMode ? 0.7 : 0.6 });
+            },
+            mouseout: function(e) {
+                if(hqLocked) return;
+                const layer = e.target;
+                if (layer !== selectedLayer) {
+                    geojsonLayer.resetStyle(layer);
+                } else {
+                    layer.setStyle({ fillOpacity: isLightMode ? 0.6 : 0.4 });
+                }
+            }
+        });
+    }
+
+    let geojsonLayer;
+    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+        .then(response => response.json())
+        .then(data => {
+            data.features = data.features.filter(f => f.id !== "ATA");
+            
+            geojsonLayer = L.geoJson(data, {
+                style: getCountryStyle, // Utilisation de la fonction dynamique
+                onEachFeature: onEachFeature
+            }).addTo(map);
+
+            document.getElementById('toggle-btn').style.display = 'block';
+        })
+        .catch(err => {
+            console.error("Erreur chargement carte:", err);
+            countryDisplay.innerText = "ERREUR CHARGEMENT CARTE";
+        });
+
 </script>
 </body>
 </html>
