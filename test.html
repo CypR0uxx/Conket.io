@@ -4,60 +4,25 @@
     <meta charset="UTF-8">
     <title>OpenFront 1918 - Drapeaux Mondiaux & Ressources</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Turf.js pour la répartition intelligente des zones dans les frontières -->
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <style>
-        /* --- DÉFINITION DES COULEURS (Variables CSS) --- */
         :root { 
-            /* Couleurs d'accentuation (restent les mêmes) */
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
-            
-            /* Thème SOMBRE par défaut */
-            --bg: #111; 
-            --header-bg: #000; 
-            --text: #fff; 
-            --panel: #1a1a1a; 
-            --panel-inner: #000;
-            --border: #333;
-            --slider-track: #333;
-            
-            /* Couleurs Ressources */
+            --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
             --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
-        }
-
-        /* --- MODE CLAIR (Surcharge les variables) --- */
-        body.light-mode {
-            --bg: #bdc3c7;
-            --header-bg: #ecf0f1;
-            --text: #2c3e50;
-            --panel: #ffffff;
-            --panel-inner: #f7f9f9;
-            --border: #bdc3c7;
-            --slider-track: #e0e0e0;
-            
-            /* Ajustement contraste ressources pour fond clair */
-            --iron: #7f8c8d; --stone: #596263; --oil: #2c3e50;
         }
         
         * { cursor: crosshair !important; }
 
-        body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; transition: background 0.3s, color 0.3s; }
+        body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
         #info-header {
             width: 100%; height: 120px;
             background: var(--header-bg); color: var(--text);
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 4px solid var(--blue); box-sizing: border-box; padding: 0 30px; z-index: 1001;
-            transition: background 0.3s;
         }
-
-        /* Bouton Thème */
-        .theme-toggle {
-            background: var(--panel); border: 2px solid var(--border);
-            color: var(--text); padding: 8px 12px; border-radius: 20px;
-            cursor: pointer; font-size: 1.2em; margin-right: 15px;
-            transition: 0.3s; display: flex; align-items: center; justify-content: center;
-        }
-        .theme-toggle:hover { border-color: var(--blue); }
 
         .flag-frame { 
             width: 110px; height: 80px; 
@@ -75,7 +40,7 @@
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
         
         #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; 
+            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
             color: var(--text); display: flex; flex-direction: column; z-index: 1000;
         }
         #side-menu.active { width: 320px; border-right: 2px solid var(--blue); }
@@ -83,51 +48,103 @@
         .menu-content { width: 300px; padding: 20px; box-sizing: border-box; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        .money-box { background: var(--panel-inner); padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.3s; }
+        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* Styles Stocks */
+        /* Styles Stocks (Barres larges) */
         .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
         .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
-        .res-bar { width: 100%; height: 10px; background: var(--slider-track); border-radius: 5px; overflow: hidden; }
+        .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
         .res-fill { height: 100%; transition: width 0.5s ease; }
 
-        .pop-section { margin-top: 30px; padding: 15px; background: var(--panel-inner); border: 1px solid var(--border); border-radius: 8px; transition: background 0.3s; }
-        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+        .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
+        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
         
-        .worker-dist-section { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; }
+        .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
         .sub-gauge-row { margin-bottom: 12px; }
-        .sub-gauge-label { font-size: 0.75em; color: var(--text); opacity: 0.7; display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .sub-gauge-track { width: 100%; height: 6px; background: var(--slider-track); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+        .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
         
-        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: var(--slider-track); outline: none; border-radius: 2px; cursor: pointer; }
+        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
         .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
 
-        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; color: #000; }
-        
-        /* Map container background is handled by Leaflet, but we set a default */
-        #map { flex-grow: 1; background: var(--bg) !important; transition: background 0.3s; }
-        
+        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
+        #map { flex-grow: 1; background: #0b0b0b !important; }
         #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
         .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
         
-        /* Styles Icônes Map */
+        /* Styles Icônes Map - SVG Détaillés "Rendus" */
         .resource-icon { 
-            text-align: center; line-height: 1;
-            filter: drop-shadow(4px 6px 3px rgba(0,0,0,0.8)); 
+            text-align: center; 
+            line-height: 1;
+            /* Ombre portée réaliste pour détacher du fond de la carte */
+            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.8)); 
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        /* Ajustement de l'ombre en mode clair via CSS global si besoin, mais ici SVG ok */
-        .resource-icon:hover { transform: scale(1.4) translateY(-8px); z-index: 2000 !important; }
+        .resource-icon:hover {
+            transform: scale(1.4) translateY(-8px);
+            z-index: 2000 !important;
+            filter: drop-shadow(8px 12px 6px rgba(0,0,0,0.9));
+        }
         
+        /* Bouton QG Stylisé */
         #btn-hq {
             background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%); 
-            border: 2px solid #fff; padding: 12px 24px; font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
-            font-size: 1.1em; transition: 0.2s; box-shadow: 0 0 15px var(--blue); text-transform: uppercase; letter-spacing: 1px;
+            border: 2px solid #fff; 
+            padding: 12px 24px; 
+            font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
+            font-size: 1.1em; transition: 0.2s; 
+            box-shadow: 0 0 15px var(--blue), inset 0 0 10px rgba(0,0,0,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        #btn-hq:hover { background: #fff; color: var(--blue); transform: scale(1.05); }
+        #btn-hq:hover { 
+            background: #fff; color: var(--blue); 
+            transform: scale(1.05); 
+            box-shadow: 0 0 25px var(--blue);
+        }
+
+        /* NOUVEAU: Compteur de Zones avec transition */
+        #resource-counter {
+            position: absolute; bottom: 30px; right: 20px;
+            width: 200px; /* Un peu plus large pour les noms */
+            background: rgba(20, 20, 20, 0.95); 
+            border: 2px solid var(--blue);
+            border-radius: 8px; padding: 12px; z-index: 1000;
+            color: var(--text); font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            transform: translateX(0); 
+        }
+        
+        #resource-counter.closed {
+            right: -240px; 
+        }
+
+        #toggle-rc-btn {
+            position: absolute;
+            left: -25px; 
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--blue);
+            border: none;
+            width: 25px;
+            height: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+            border-radius: 5px 0 0 5px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .rc-header { font-size: 0.75em; color: var(--gold); border-bottom: 1px solid #444; margin-bottom: 8px; padding-bottom: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .rc-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 1.0em; }
+        .rc-label { display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        /* Style des SVG dans la liste */
+        .rc-icon svg { width: 28px; height: 28px; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)); vertical-align: middle; }
+        .rc-total { margin-top: 8px; border-top: 1px solid #444; padding-top: 5px; text-align: right; font-size: 0.9em; color: #aaa; }
+        .rc-val { font-family: monospace; font-weight: bold; color: #fff; font-size: 1.1em; }
     </style>
 </head>
 <body>
@@ -139,13 +156,7 @@
 </div>
 
 <header id="info-header">
-    <div style="display:flex; align-items:center;">
-        <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
-            <span id="theme-icon">☀️</span>
-        </button>
-        <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
-    </div>
-    
+    <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
     <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
         <div class="flag-frame"><span id="flag-emoji">🌐</span></div>
         <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">INITIALISATION...</div>
@@ -167,6 +178,7 @@
                 </div>
             </div>
 
+            <!-- SECTION STOCKS (Max 1000 T) -->
             <div id="inventory">
                 <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
                 <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
@@ -189,75 +201,88 @@
                 <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
 
                 <div class="worker-dist-section">
-                    <div style="font-size: 0.75em; color: var(--text); margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
+                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div><div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div><div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div><div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
                     <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()"></div>
-                    <div style="font-size: 0.65em; color: var(--text); opacity:0.6; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
+                    <div style="font-size: 0.65em; color: #666; margin-top: 5px; text-align: right;">Total Travailleurs: 100%</div>
                 </div>
             </div>
         </div>
     </div>
     <button id="toggle-btn" onclick="toggleMenu()">></button>
     <div id="map"></div>
+
+    <!-- COMPTEUR DE ZONES MIS A JOUR AVEC SVG -->
+    <div id="resource-counter" style="display:none;">
+        <button id="toggle-rc-btn" onclick="toggleResourceCounter()">></button>
+        <div class="rc-header">ZONES D'EXTRACTION</div>
+        
+        <div class="rc-item">
+            <span class="rc-label">
+                <span class="rc-icon" id="icon-fer">
+                    <!-- SVG FER -->
+                    <svg viewBox="0 0 64 64" width="24" height="24" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));"><defs><linearGradient id="mtnGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient><linearGradient id="woodGrad2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient></defs><path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad2)" stroke="#455a64" stroke-width="2"/><path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/><path d="M20 60 V38" stroke="url(#woodGrad2)" stroke-width="4" stroke-linecap="round"/><path d="M44 60 V38" stroke="url(#woodGrad2)" stroke-width="4" stroke-linecap="round"/><path d="M18 38 H46" stroke="url(#woodGrad2)" stroke-width="4" stroke-linecap="round"/><path d="M26 60 L26 64 M38 60 L38 64" stroke="#212121" stroke-width="3"/><path d="M24 62 H40" stroke="#3e2723" stroke-width="3"/><circle cx="32" cy="18" r="4" fill="#eceff1" opacity="0.6"/><rect x="27" y="52" width="10" height="6" fill="#455a64" stroke="#000"/><circle cx="28" cy="60" r="2" fill="#000"/><circle cx="36" cy="60" r="2" fill="#000"/><rect x="28" y="53" width="8" height="3" fill="#b0bec5"/></svg>
+                </span> 
+                Fer
+            </span> 
+            <span id="count-fer" class="rc-val">0</span>
+        </div>
+
+        <div class="rc-item">
+            <span class="rc-label">
+                <span class="rc-icon" id="icon-oil">
+                    <!-- SVG PETROLE -->
+                    <svg viewBox="0 0 64 64" width="24" height="24" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));"><defs><linearGradient id="metalGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#78909c"/><stop offset="100%" stop-color="#263238"/></linearGradient></defs><rect x="8" y="56" width="48" height="6" fill="#90a4ae" stroke="#37474f"/><path d="M24 56 L32 24 L40 56" fill="none" stroke="#263238" stroke-width="4"/><rect x="28" y="16" width="8" height="12" fill="url(#metalGrad2)" stroke="#000"/><path d="M14 34 L54 22" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M54 22 L54 30" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M8 34 Q4 38 8 46" stroke="#212121" stroke-width="3" fill="none"/><line x1="8" y1="46" x2="8" y2="56" stroke="#212121" stroke-width="3"/><circle cx="32" cy="24" r="3" fill="#fff" stroke="#000" stroke-width="2"/><path d="M48 56 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/><path d="M54 52 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/></svg>
+                </span> 
+                Pétrole
+            </span> 
+            <span id="count-oil" class="rc-val">0</span>
+        </div>
+
+        <div class="rc-item">
+            <span class="rc-label">
+                <span class="rc-icon" id="icon-stone">
+                    <!-- SVG PIERRE -->
+                    <svg viewBox="0 0 64 64" width="24" height="24" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));"><defs><linearGradient id="groundGrad2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient></defs><path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad2)"/><path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/><path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/><circle cx="16" cy="54" r="4" fill="#6d4c41"/><circle cx="48" cy="52" r="5" fill="#5d4037"/><circle cx="50" cy="20" r="3" fill="#795548"/><path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/><path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/><path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/><line x1="50" y1="14" x2="50" y2="35" stroke="#212121" stroke-width="2"/><line x1="50" y1="14" x2="38" y2="28" stroke="#212121" stroke-width="2"/><rect x="35" y="28" width="6" height="4" fill="#f1c40f"/></svg>
+                </span> 
+                Pierre
+            </span> 
+            <span id="count-stone" class="rc-val">0</span>
+        </div>
+
+        <div class="rc-item">
+            <span class="rc-label">
+                <span class="rc-icon" id="icon-wood">
+                    <!-- SVG BOIS -->
+                    <svg viewBox="0 0 64 64" width="24" height="24" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));"><defs><linearGradient id="forestGrad2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient></defs><path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/><path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/><path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/><path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/><rect x="12" y="55" width="4" height="6" fill="#3e2723"/><path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/><rect x="48" y="55" width="4" height="6" fill="#3e2723"/><path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/><rect x="30" y="58" width="4" height="6" fill="#5d4037"/><circle cx="52" cy="58" r="3" fill="#d7ccc8" stroke="#5d4037"/><rect x="38" y="55" width="10" height="4" fill="#8d6e63" rx="2" transform="rotate(10 38 55)"/></svg>
+                </span> 
+                Bois
+            </span> 
+            <span id="count-wood" class="rc-val">0</span>
+        </div>
+
+        <div class="rc-item">
+            <span class="rc-label">
+                <span class="rc-icon" id="icon-wheat">
+                    <!-- SVG BLE -->
+                    <svg viewBox="0 0 64 64" width="24" height="24" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));"><rect x="2" y="30" width="60" height="30" fill="#f9a825" rx="4" /><path d="M4 30 Q10 40 16 30 T28 30 T40 30 T52 30 T64 30" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M4 40 Q10 50 16 40 T28 40 T40 40 T52 40 T64 40" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M10 30 V15" stroke="#f9a825" stroke-width="2"/><ellipse cx="10" cy="15" rx="3" ry="6" fill="#fdd835"/><path d="M25 35 V10" stroke="#f9a825" stroke-width="2"/><ellipse cx="25" cy="10" rx="4" ry="8" fill="#fdd835"/><path d="M40 32 V12" stroke="#f9a825" stroke-width="2"/><ellipse cx="40" cy="12" rx="4" ry="7" fill="#fdd835"/><rect x="48" y="32" width="14" height="10" fill="#c0392b"/><circle cx="50" cy="42" r="3" fill="#333"/><circle cx="60" cy="42" r="3" fill="#333"/><rect x="60" y="34" width="2" height="8" fill="#f1c40f"/></svg>
+                </span> 
+                Blé
+            </span> 
+            <span id="count-wheat" class="rc-val">0</span>
+        </div>
+
+        <div class="rc-total">Total: <span id="count-total">0</span></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- GESTION DU THÈME ---
-    const mapEl = document.getElementById('map');
-    let isLightMode = false;
-    let currentTileLayer;
-    
-    // URLs des tuiles
-    const darkTiles = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
-    const lightTiles = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
-
-    // Initialisation Carte
     const map = L.map('map', { attributionControl: false, zoomControl: false, minZoom: 2, maxBounds: [[-90, -180], [90, 180]] }).setView([20, 0], 2);
-    
-    // Ajout de la couche par défaut (Sombre)
-    currentTileLayer = L.tileLayer(darkTiles, { noWrap: true }).addTo(map);
-
-    function toggleTheme() {
-        isLightMode = !isLightMode;
-        document.body.classList.toggle('light-mode');
-        
-        // Changer l'icône du bouton
-        document.getElementById('theme-icon').innerText = isLightMode ? "🌑" : "☀️";
-        
-        // Changer les tuiles de la carte
-        map.removeLayer(currentTileLayer);
-        currentTileLayer = L.tileLayer(isLightMode ? lightTiles : darkTiles, { noWrap: true }).addTo(map);
-        
-        // Mettre à jour le style des pays si déjà chargés
-        if(geojsonLayer) {
-            geojsonLayer.setStyle(getCountryStyle);
-            // Si un pays est sélectionné, réappliquer le style de sélection
-            if(selectedLayer) {
-                selectedLayer.setStyle({
-                    weight: 3,
-                    color: '#00d4ff',
-                    fillOpacity: isLightMode ? 0.6 : 0.4,
-                    dashArray: ''
-                });
-            }
-        }
-    }
-
-    // Style dynamique des pays selon le mode
-    function getCountryStyle(feature) {
-        return {
-            fillColor: isLightMode ? '#95a5a6' : '#2c3e50', // Gris clair vs Gris foncé
-            weight: 1,
-            opacity: 1,
-            color: isLightMode ? '#7f8c8d' : '#111', // Bordures
-            dashArray: '3',
-            fillOpacity: isLightMode ? 0.3 : 0.2
-        };
-    }
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
 
     let hqLocked = false, selectedLayer = null, timeLeft = 15, currentArea = 0;
     const flagDisplay = document.getElementById('flag-emoji');
@@ -266,9 +291,9 @@
     let currentPopulationMillions = 0.5;
     let resourceLayers = L.layerGroup().addTo(map);
 
-    const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹", "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧", "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹", "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳", "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭", "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬", "Democratic Republic of the Congo": "🇨🇩", "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿", "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱", "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷", "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮", "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪", "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳", "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺", "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰", "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧", "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹", "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻", "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺", "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳", "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮", "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴", "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦", "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼", "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲", "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨", "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧", "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸", "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱", "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺", "Vatican": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭", "Falkland Islands": "🇫🇰", "Antarctica": "🇦🇶" };
+    const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹", "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧", "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹", "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳", "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭", "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Republic of the Congo": "🇨🇬", "Democratic Republic of the Congo": "🇨🇩", "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿", "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱", "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷", "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮", "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪", "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳", "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺", "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰", "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧", "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹", "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻", "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺", "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳", "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮", "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴", "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦", "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼", "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲", "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨", "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧", "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸", "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱", "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺", "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭", "Falkland Islands": "🇫🇰" };
 
-    const surfaceData = { "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024, "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086, "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195, "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192, "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450, "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590, "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329, "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730, "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442, "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752, "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424, "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340, "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857, "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969, "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120, "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100, "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763, "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000, "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871, "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785, "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751, "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61, "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican": 0.49, "Antarctica": 14000000 };
+    const surfaceData = { "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024, "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086, "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195, "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192, "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450, "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590, "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329, "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730, "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442, "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752, "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424, "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340, "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857, "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969, "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120, "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100, "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763, "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000, "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871, "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785, "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751, "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61, "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49 };
 
     window.updateMainRatio = function(val) {
         const soldierPct = parseInt(val);
@@ -351,156 +376,314 @@
         return Math.round(amount * 100) / 100;
     }
 
+    // --- GENERATION DES ZONES DE RESSOURCES (ICONES SVG DÉTAILLÉES) ---
     function generateResourceZones(layer, area) {
         resourceLayers.clearLayers();
         let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
         numZones = Math.max(10, Math.min(50, numZones));
 
+        // COMPTEUR RESET
+        let counts = { fer: 0, oil: 0, stone: 0, wood: 0, wheat: 0 };
+
         const types = [
-            { id: 'fer', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient><linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient></defs><path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/><path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/><path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="4" stroke-linecap="round"/><path d="M26 60 L24 64 M38 60 L40 64" stroke="#212121" stroke-width="2"/><path d="M22 62 H42" stroke="#3e2723" stroke-width="2"/><rect x="26" y="50" width="12" height="8" fill="#455a64" stroke="#000" stroke-width="1"/><circle cx="28" cy="58" r="2" fill="#000"/><circle cx="36" cy="58" r="2" fill="#000"/><rect x="27" y="51" width="10" height="3" fill="#cfd8dc"/></svg>` },
-            { id: 'oil', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b0bec5"/><stop offset="100%" stop-color="#455a64"/></linearGradient></defs><rect x="10" y="54" width="44" height="6" fill="#78909c" stroke="#37474f"/><path d="M28 54 L32 25 L36 54" fill="none" stroke="#37474f" stroke-width="3"/><path d="M10 32 L54 22" stroke="#c62828" stroke-width="4" stroke-linecap="round"/><path d="M10 32 L10 45" stroke="#37474f" stroke-width="1"/><rect x="8" y="45" width="4" height="6" fill="#37474f"/><rect x="50" y="18" width="8" height="10" fill="#546e7a" stroke="#000"/><path d="M54 28 V54" stroke="#000" stroke-width="1"/><path d="M46 58 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/><path d="M54 54 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/></svg>` },
-            { id: 'stone', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient></defs><path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/><path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/><path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/><circle cx="16" cy="54" r="4" fill="#6d4c41"/><circle cx="48" cy="52" r="5" fill="#5d4037"/><circle cx="50" cy="20" r="3" fill="#795548"/><path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/><path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/><path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/><line x1="50" y1="14" x2="50" y2="40" stroke="#212121" stroke-width="1"/><line x1="50" y1="14" x2="35" y2="30" stroke="#212121" stroke-width="1"/></svg>` },
-            { id: 'wood', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient></defs><path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/><path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/><path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/><path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/><rect x="12" y="55" width="4" height="6" fill="#3e2723"/><path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/><rect x="48" y="55" width="4" height="6" fill="#3e2723"/><path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/><rect x="30" y="58" width="4" height="6" fill="#3e2723"/><circle cx="10" cy="58" r="3" fill="#5d4037"/><circle cx="16" cy="58" r="3" fill="#5d4037"/></svg>` },
-            { id: 'wheat', icon: `<svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="wheatGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffd54f"/><stop offset="100%" stop-color="#ff6f00"/></linearGradient></defs><ellipse cx="32" cy="58" rx="28" ry="6" fill="#5d4037"/><path d="M10 58 Q15 40 10 25" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M14 58 Q19 40 14 28" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M50 58 Q45 40 50 25" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M46 58 Q41 40 46 28" stroke="#ffb300" stroke-width="2" fill="none"/><path d="M20 56 V35 L32 25 L44 35 V56 Z" fill="#b71c1c" stroke="#3e2723" stroke-width="1"/><path d="M32 25 L20 35 H44 Z" fill="#e53935"/><rect x="28" y="42" width="8" height="14" fill="#3e2723"/><path d="M28 42 L32 56 L36 42" stroke="#5d4037" stroke-width="1"/><path d="M26 60 Q20 40 22 30" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="22" cy="30" rx="3" ry="6" fill="#ffd54f"/><path d="M38 60 Q44 40 42 30" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="42" cy="30" rx="3" ry="6" fill="#ffd54f"/><path d="M32 60 Q32 40 32 28" stroke="url(#wheatGrad)" stroke-width="3" fill="none"/><ellipse cx="32" cy="28" rx="3" ry="7" fill="#ffd54f"/></svg>` }
+            // Mine (Fer)
+            { id: 'fer', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient>
+                        <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient>
+                    </defs>
+                    <path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/>
+                    <path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/>
+                    <path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M26 60 L26 64 M38 60 L38 64" stroke="#212121" stroke-width="3"/>
+                    <path d="M24 62 H40" stroke="#3e2723" stroke-width="3"/>
+                    <circle cx="32" cy="18" r="4" fill="#eceff1" opacity="0.6"/>
+                    <rect x="27" y="52" width="10" height="6" fill="#455a64" stroke="#000"/>
+                    <circle cx="28" cy="60" r="2" fill="#000"/>
+                    <circle cx="36" cy="60" r="2" fill="#000"/>
+                    <rect x="28" y="53" width="8" height="3" fill="#b0bec5"/>
+                </svg>` 
+            },
+            
+            // Chevalet (Pétrole) + Barils
+            { id: 'oil', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#78909c"/><stop offset="100%" stop-color="#263238"/></linearGradient>
+                    </defs>
+                    <rect x="8" y="56" width="48" height="6" fill="#90a4ae" stroke="#37474f"/>
+                    <path d="M24 56 L32 24 L40 56" fill="none" stroke="#263238" stroke-width="4"/>
+                    <rect x="28" y="16" width="8" height="12" fill="url(#metalGrad)" stroke="#000"/>
+                    <path d="M14 34 L54 22" stroke="#c62828" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M54 22 L54 30" stroke="#c62828" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M8 34 Q4 38 8 46" stroke="#212121" stroke-width="3" fill="none"/>
+                    <line x1="8" y1="46" x2="8" y2="56" stroke="#212121" stroke-width="3"/>
+                    <circle cx="32" cy="24" r="3" fill="#fff" stroke="#000" stroke-width="2"/>
+                    <!-- Barils -->
+                    <path d="M48 56 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
+                    <path d="M54 52 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/>
+                </svg>` 
+            },
+            
+            // Carrière (Pierre) + Petites pierres
+            { id: 'stone', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient>
+                    </defs>
+                    <path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/>
+                    <path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/>
+                    <path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/>
+                    <circle cx="16" cy="54" r="4" fill="#6d4c41"/>
+                    <circle cx="48" cy="52" r="5" fill="#5d4037"/>
+                    <circle cx="50" cy="20" r="3" fill="#795548"/>
+                    <path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/>
+                    <!-- Petites pierres -->
+                    <path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/>
+                    <path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/>
+                    <!-- Pelle mécanique stylisée -->
+                    <line x1="50" y1="14" x2="50" y2="35" stroke="#212121" stroke-width="2"/>
+                    <line x1="50" y1="14" x2="38" y2="28" stroke="#212121" stroke-width="2"/>
+                    <rect x="35" y="28" width="6" height="4" fill="#f1c40f"/>
+                </svg>` 
+            },
+            
+            // Forêt (Bois) + Troncs coupés
+            { id: 'wood', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <defs>
+                        <linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
+                    </defs>
+                    <!-- Arbres du fond -->
+                    <path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/>
+                    <path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/>
+                    <path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/>
+                    
+                    <!-- Arbres de devant -->
+                    <path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/>
+                    <rect x="12" y="55" width="4" height="6" fill="#3e2723"/>
+                    
+                    <path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/>
+                    <rect x="48" y="55" width="4" height="6" fill="#3e2723"/>
+                    
+                    <path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/> <!-- Arbre central -->
+                    <rect x="30" y="58" width="4" height="6" fill="#5d4037"/>
+                    <!-- Troncs coupés -->
+                    <circle cx="52" cy="58" r="3" fill="#d7ccc8" stroke="#5d4037"/>
+                    <rect x="38" y="55" width="10" height="4" fill="#8d6e63" rx="2" transform="rotate(10 38 55)"/>
+                </svg>` 
+            },
+            
+            // Champ (Blé) + Moissonneuse-batteuse
+            { id: 'wheat', icon: `
+                <svg viewBox="0 0 64 64" width="56" height="56" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));">
+                    <!-- Sol -->
+                    <rect x="2" y="30" width="60" height="30" fill="#f9a825" rx="4" />
+                    
+                    <!-- Texture champ -->
+                    <path d="M4 30 Q10 40 16 30 T28 30 T40 30 T52 30 T64 30" stroke="#fbc02d" stroke-width="2" fill="none"/>
+                    <path d="M4 40 Q10 50 16 40 T28 40 T40 40 T52 40 T64 40" stroke="#fbc02d" stroke-width="2" fill="none"/>
+                    
+                    <!-- Epis -->
+                    <path d="M10 30 V15" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="10" cy="15" rx="3" ry="6" fill="#fdd835"/>
+                    
+                    <path d="M25 35 V10" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="25" cy="10" rx="4" ry="8" fill="#fdd835"/>
+                    
+                    <path d="M40 32 V12" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="40" cy="12" rx="4" ry="7" fill="#fdd835"/>
+                    
+                    <path d="M55 30 V18" stroke="#f9a825" stroke-width="2"/>
+                    <ellipse cx="55" cy="18" rx="3" ry="5" fill="#fdd835"/>
+                    
+                    <!-- Moissonneuse -->
+                    <rect x="35" y="30" width="20" height="12" fill="#c0392b"/> <!-- Body -->
+                    <circle cx="40" cy="42" r="3" fill="#333"/> <!-- Wheel -->
+                    <circle cx="50" cy="42" r="3" fill="#333"/> <!-- Wheel -->
+                    <rect x="55" y="32" width="4" height="10" fill="#f1c40f"/> <!-- Header -->
+                </svg>` 
+            }
         ];
 
-        const bounds = layer.getBounds();
-        const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
-        const polygonFeature = layer.toGeoJSON();
-        let placed = 0;
+        const geoJson = layer.toGeoJSON();
+        const bbox = turf.bbox(geoJson);
+
+        let zonesCreated = 0;
         let attempts = 0;
-        
-        while (placed < numZones && attempts < numZones * 5) {
+        let forcedTypes = [...types]; 
+
+        while (zonesCreated < numZones && attempts < 20000) {
             attempts++;
-            const randomPt = turf.randomPoint(1, { bbox: bbox });
-            if (turf.booleanPointInPolygon(randomPt.features[0], polygonFeature)) {
-                const coords = randomPt.features[0].geometry.coordinates;
-                const type = types[Math.floor(Math.random() * types.length)];
+            const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
+            if (turf.booleanPointInPolygon(randomPoint, geoJson)) {
+                let type;
+                if (forcedTypes.length > 0) {
+                    type = forcedTypes.pop();
+                } else {
+                    type = types[Math.floor(Math.random() * types.length)];
+                }
+                const lat = randomPoint.geometry.coordinates[1];
+                const lng = randomPoint.geometry.coordinates[0];
+                const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
+                const circle = L.circle([lat, lng], {
+                    color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: radius, weight: 1, opacity: 0
+                }).addTo(resourceLayers);
                 const icon = L.divIcon({
                     className: 'resource-icon',
-                    html: type.icon,
+                    html: `<div>${type.icon}</div>`,
                     iconSize: [56, 56],
-                    iconAnchor: [28, 56]
+                    iconAnchor: [28, 28]
                 });
-                L.marker([coords[1], coords[0]], { icon: icon }).addTo(resourceLayers);
-                placed++;
+                const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
+                marker.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
+                marker.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
+                circle.on('mouseover', () => { circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }); });
+                circle.on('mouseout', () => { circle.setStyle({ fillOpacity: 0.0, opacity: 0 }); });
+                
+                // --- COMPTEUR ---
+                counts[type.id]++;
+                zonesCreated++;
             }
         }
+
+        // --- MISE A JOUR UI COMPTEUR ---
+        document.getElementById('count-fer').innerText = counts.fer;
+        document.getElementById('count-oil').innerText = counts.oil;
+        document.getElementById('count-stone').innerText = counts.stone;
+        document.getElementById('count-wood').innerText = counts.wood;
+        document.getElementById('count-wheat').innerText = counts.wheat;
+        document.getElementById('count-total').innerText = zonesCreated;
+        
+        // AFFICHER LE PANNEAU
+        const rc = document.getElementById('resource-counter');
+        rc.style.display = 'block';
+        // S'assurer qu'il est ouvert au début
+        rc.classList.remove('closed');
+        document.getElementById('toggle-rc-btn').innerText = ">";
     }
 
-    function toggleMenu() {
+    // TOGGLE DU COMPTEUR DE RESSOURCES
+    window.toggleResourceCounter = function() {
+        const rc = document.getElementById('resource-counter');
+        const btn = document.getElementById('toggle-rc-btn');
+        rc.classList.toggle('closed');
+        btn.innerText = rc.classList.contains('closed') ? "<" : ">"; // Flèche change de sens
+    };
+
+    fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+    .then(r => r.json())
+    .then(data => {
+        L.geoJson(data, {
+            style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
+            onEachFeature: (feature, layer) => {
+                layer.on('mouseover', function() {
+                    if(hqLocked) return;
+                    this.setStyle({ fillOpacity: 0.9, fillColor: '#444', color: '#00d4ff' });
+                    const props = feature.properties;
+                    const name = props.ADMIN || props.name || "Inconnu";
+                    const iso = props.ISO_A2 || props.iso_a2 || "";
+                    countryDisplay.innerText = name.toUpperCase();
+                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
+                });
+                layer.on('mouseout', function() {
+                    if (this !== selectedLayer) { this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' }); }
+                    if(hqLocked) return;
+                    if (selectedLayer) {
+                        const p = selectedLayer.feature.properties;
+                        const name = p.ADMIN || p.name;
+                        const iso = p.ISO_A2 || p.iso_a2 || "";
+                        countryDisplay.innerText = name.toUpperCase();
+                        flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
+                    } else {
+                        countryDisplay.innerText = "SÉLECTIONNEZ UNE ZONE";
+                        flagDisplay.innerText = "🌐";
+                    }
+                });
+                layer.on('click', function() {
+                    if(hqLocked) return;
+                    if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
+                    selectedLayer = this;
+                    this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
+                    
+                    const p = feature.properties;
+                    const name = p.ADMIN || p.name;
+                    const iso = p.ISO_A2 || p.iso_a2 || "";
+                    countryDisplay.innerText = name.toUpperCase();
+                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
+
+                    currentArea = getArea(name, layer);
+
+                    let basePop = 0.5; let resMultiplier = 1.0; let calculatedPop = 0.5;
+                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; } 
+                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; } 
+                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; } 
+                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; } 
+                    else { resMultiplier = 1.0; calculatedPop = basePop; }
+
+                    currentPopulationMillions = calculatedPop;
+                    document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
+                    window.updateWorkerDistribution(); 
+
+                    const budget = calculateBudget(currentArea);
+                    document.getElementById('money-val').innerText = budget.toLocaleString('en-US').replace(/,/g, ' ') + " $";
+
+                    const capMax = 1000; 
+
+                    let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
+                    document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
+
+                    let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
+                    document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
+
+                    let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
+                    document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
+
+                    let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
+                    document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
+
+                    let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
+                    document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
+                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
+
+                    document.getElementById('action-zone').innerHTML = `
+                        <button id="btn-hq" onclick="lockHQ()">ÉTABLIR QG</button>`;
+                });
+            }
+        }).addTo(map);
+    });
+
+    window.lockHQ = function() {
+        if (!selectedLayer) return;
+        hqLocked = true;
+        selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
+        generateResourceZones(selectedLayer, currentArea);
+        document.getElementById('side-menu').classList.add('active');
+        document.getElementById('toggle-btn').style.display = 'block';
+        document.getElementById('toggle-btn').style.left = "320px";
+        const areaStr = currentArea.toLocaleString('fr-FR');
+        document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
+        document.getElementById('action-zone').innerHTML = `<span style="color:var(--green); font-weight:bold; font-size:1.2em;">PROFIL ACTIVÉ</span>`;
+        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
+        if (window.gameTimer) clearInterval(window.gameTimer);
+        const timerEl = document.getElementById('timer');
+        if(timerEl) { timerEl.innerText = "OK"; timerEl.style.color = "var(--green)"; }
+    };
+
+    window.toggleMenu = function() {
         const menu = document.getElementById('side-menu');
         const btn = document.getElementById('toggle-btn');
-        menu.classList.toggle('active');
-        btn.innerHTML = menu.classList.contains('active') ? "<" : ">";
-        btn.style.left = menu.classList.contains('active') ? "320px" : "0";
-    }
-
-    function establishHQ() {
-        if (hqLocked || !selectedLayer) return;
-        
-        hqLocked = true;
-        clearInterval(window.gameTimer);
-        document.getElementById('timer').style.color = "#2ecc71";
-        document.getElementById('timer').innerText = "OK";
-        
-        document.getElementById('hq-name').innerText = "QG OPÉRATIONNEL : " + countryDisplay.innerText;
-        document.getElementById('action-zone').innerHTML = '<div style="color:var(--green); font-weight:bold; border:2px solid var(--green); padding:5px 15px; border-radius:4px;">ORDRES EN COURS</div>';
-        
-        const area = getArea(countryDisplay.innerText, selectedLayer);
-        const budget = calculateBudget(area);
-        const pop = Math.max(0.1, (area / 100000) * (0.5 + Math.random())); 
-        currentPopulationMillions = pop;
-
-        document.getElementById('money-val').innerText = budget.toLocaleString('fr-FR') + " $";
-        document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(pop);
-
-        const resources = ['fer', 'oil', 'stone', 'wood', 'wheat'];
-        resources.forEach(res => {
-            const val = calculateResource(area, 50, 900);
-            document.getElementById(`val-${res}`).innerText = Math.floor(val) + " T";
-            document.getElementById(`stock-${res}`).style.width = (val / 10) + "%"; 
-        });
-
-        generateResourceZones(selectedLayer, area);
-        
-        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50], maxZoom: 5 });
-        
-        setTimeout(() => {
-            if (!document.getElementById('side-menu').classList.contains('active')) {
-                toggleMenu();
-            }
-            updateMainRatio(30); 
-        }, 800);
-    }
-
-    function onCountryClick(e) {
-        if (hqLocked) return;
-        
-        if (selectedLayer) {
-            geojsonLayer.resetStyle(selectedLayer);
-        }
-        
-        selectedLayer = e.target;
-        selectedLayer.setStyle({
-            weight: 3,
-            color: '#00d4ff',
-            fillOpacity: isLightMode ? 0.6 : 0.4,
-            dashArray: ''
-        });
-        
-        selectedLayer.bringToFront();
-        map.fitBounds(e.target.getBounds(), { padding: [20, 20], maxZoom: 4 });
-
-        const props = e.target.feature.properties;
-        const name = props.name || "Territoire Inconnu";
-        const iso = props.iso_a2 || "-99";
-
-        countryDisplay.innerText = name;
-        flagDisplay.innerText = getFlagEmoji(iso, name);
-        
-        const actionZone = document.getElementById('action-zone');
-        actionZone.innerHTML = `<button id="btn-hq" onclick="establishHQ()">ÉTABLIR QG ICI</button>`;
-    }
-
-    function onEachFeature(feature, layer) {
-        layer.on({
-            click: onCountryClick,
-            mouseover: function(e) {
-                if(hqLocked) return;
-                const layer = e.target;
-                layer.setStyle({ fillOpacity: isLightMode ? 0.7 : 0.6 });
-            },
-            mouseout: function(e) {
-                if(hqLocked) return;
-                const layer = e.target;
-                if (layer !== selectedLayer) {
-                    geojsonLayer.resetStyle(layer);
-                } else {
-                    layer.setStyle({ fillOpacity: isLightMode ? 0.6 : 0.4 });
-                }
-            }
-        });
-    }
-
-    let geojsonLayer;
-    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
-        .then(response => response.json())
-        .then(data => {
-            data.features = data.features.filter(f => f.id !== "ATA");
-            
-            geojsonLayer = L.geoJson(data, {
-                style: getCountryStyle, // Utilisation de la fonction dynamique
-                onEachFeature: onEachFeature
-            }).addTo(map);
-
-            document.getElementById('toggle-btn').style.display = 'block';
-        })
-        .catch(err => {
-            console.error("Erreur chargement carte:", err);
-            countryDisplay.innerText = "ERREUR CHARGEMENT CARTE";
-        });
-
+        const isOpen = menu.classList.toggle('active');
+        btn.innerText = isOpen ? "<" : ">";
+        btn.style.left = isOpen ? "320px" : "0";
+    };
 </script>
 </body>
 </html>
