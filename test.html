@@ -8,12 +8,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <style>
-        :root { 
+        :root {
             --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
             --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
             --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
         }
-        
+
         * { cursor: crosshair !important; box-sizing: border-box; }
 
         body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; color: var(--text); }
@@ -25,32 +25,34 @@
             border-bottom: 4px solid var(--blue); padding: 0 30px; z-index: 1001;
         }
 
-        .flag-frame { 
-            width: 110px; height: 80px; 
-            border: 2px solid var(--blue); 
-            background: #222; 
-            display: flex; align-items: center; justify-content: center; 
+        .flag-frame {
+            width: 110px; height: 80px;
+            border: 2px solid var(--blue);
+            background: #222;
+            display: flex; align-items: center; justify-content: center;
             position: relative; overflow: hidden;
-            font-size: 3.5em; 
+            font-size: 3.5em;
             border-radius: 12px;
             box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
         }
-        
+
         #flag-emoji { line-height: 1; display: block; cursor: default; }
 
         #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
-        
-        #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+
+        #side-menu {
+            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; flex-direction: column; z-index: 1000;
         }
-        #side-menu.active { width: 360px; border-right: 2px solid var(--blue); } 
-        
+        #side-menu.active { width: 360px; border-right: 2px solid var(--blue); }
+
         .menu-content { width: 340px; padding: 20px; opacity: 0; transition: 0.3s; }
         #side-menu.active .menu-content { opacity: 1; }
 
-        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
+        .money-box {
+            background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+
         .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
         .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
         .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
@@ -60,36 +62,36 @@
         .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
         .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
         .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
-        
+
         .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
         .sub-gauge-row { margin-bottom: 12px; }
         .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
         .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
         .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
-        
+
         .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
         .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
 
         #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
         #map { flex-grow: 1; background: #0b0b0b !important; }
-        
+
         #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
         .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        
+
         /* Styles Icônes Map */
-        .resource-icon { 
+        .resource-icon {
             text-align: center; line-height: 1;
-            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.8)); 
+            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .resource-icon:hover { transform: scale(1.4) translateY(-8px); z-index: 2000 !important; filter: drop-shadow(8px 12px 6px rgba(0,0,0,0.9)); }
-        
+
         /* Bouton QG */
         #btn-hq {
-            background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%); 
-            border: 2px solid #fff; padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%);
+            border: 2px solid #fff; padding: 12px 24px;
             font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
-            font-size: 1.1em; transition: 0.2s; 
+            font-size: 1.1em; transition: 0.2s;
             box-shadow: 0 0 15px var(--blue); text-transform: uppercase; letter-spacing: 1px;
         }
         #btn-hq:hover { background: #fff; color: var(--blue); transform: scale(1.05); }
@@ -97,17 +99,17 @@
         /* Compteur de Zones */
         #resource-counter {
             position: absolute; bottom: 30px; right: 20px;
-            width: 250px; background: rgba(20, 20, 20, 0.95); 
+            width: 250px; background: rgba(20, 20, 20, 0.95);
             border: 2px solid var(--blue); border-radius: 8px; padding: 12px; z-index: 1000;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(0); 
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(0);
         }
         #resource-counter.closed { right: -290px; }
         #toggle-rc-btn {
             position: absolute; left: -25px; top: 50%; transform: translateY(-50%);
             background: var(--blue); border: none; width: 25px; height: 50px;
-            cursor: pointer; font-weight: bold; color: #000; border-radius: 5px 0 0 5px; 
+            cursor: pointer; font-weight: bold; color: #000; border-radius: 5px 0 0 5px;
             display: flex; align-items: center; justify-content: center;
         }
         .rc-header { font-size: 0.75em; color: var(--gold); border-bottom: 1px solid #444; margin-bottom: 10px; padding-bottom: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
@@ -140,6 +142,11 @@
         .btn-upg { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
         .btn-upg:hover { filter: brightness(1.2); }
         .b-req { font-size: 0.7em; color: var(--red); margin-top: 6px; text-align: center; font-style: italic; border-top: 1px dotted #444; padding-top: 4px;}
+
+        .built-resource-icon {
+            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.8));
+            transform: scale(1.2);
+        }
     </style>
 </head>
 <body>
@@ -181,8 +188,8 @@
                 <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
                 <div class="res-item"><div class="res-header"><span>Stock Pétrole</span><span id="val-oil" style="color: var(--oil);">-- T</span></div><div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div></div>
                 <div class="res-item"><div class="res-header"><span>Stock Pierre</span><span id="val-stone" style="color: var(--stone);">-- T</span></div><div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Bois</span><span id="val-wood" style="color: var(--wood);">-- T</span></div><div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Blé</span><span id="val-wheat" style="color: var(--wheat);">-- T</span></div><div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Bois</span><span id="val-wood" style="color: var(--wood);">-- T</span></div><div class="res-bar"><div id="stock-wood" class="res-fill" style="background: var(--wood);"></div></div></div>
+                <div class="res-item"><div class="res-header"><span>Stock Blé</span><span id="val-wheat" style="color: var(--wheat);">-- T</span></div><div class="res-bar"><div id="stock-wheat" class="res-fill" style="background: var(--wheat);"></div></div></div>
             </div>
 
             <div class="pop-section">
@@ -215,11 +222,11 @@
             </div>
         </div>
     </div>
-    <button id="toggle-btn" onclick="toggleMenu()">></button>
+    <button id="toggle-btn" onclick="toggleMenu()"></button>
     <div id="map"></div>
 
     <div id="resource-counter" style="display:none;">
-        <button id="toggle-rc-btn" onclick="toggleResourceCounter()">></button>
+        <button id="toggle-rc-btn" onclick="toggleResourceCounter()"></button>
         <div class="rc-header">ZONES D'EXTRACTION</div>
         <div id="resource-counter-content"></div>
     </div>
@@ -237,15 +244,41 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentArea = 0;
     let gameTimeSeconds = 0;
     let gameTimerInterval = null;
-    let currentWorkerPct = 70; 
+    let resourceProductionInterval = null; // New interval for resource production
+    let currentWorkerPct = 70;
     let currentPopulationMillions = 0.5;
     let resourceLayers = L.layerGroup().addTo(map);
+    const TICK_INTERVAL_MS = 1000; // 1 second
+    const SECONDS_PER_HOUR = 3600;
+    const MAX_RESOURCE_CAP = 1000; // Max stock for any resource
+
+    // Global variable for the ghost marker
+    let ghostMarker = null;
+    const GHOST_MARKER_RADIUS = 50000; // 50 km radius for the ghost marker
+    const GHOST_MARKER_STYLE = {
+        color: '#00d4ff',
+        fillColor: '#00d4ff',
+        fillOpacity: 0.2,
+        weight: 2,
+        opacity: 0.8
+    };
+
+    let currentResourceStocks = {
+        fer: 0,
+        oil: 0,
+        stone: 0,
+        wood: 0,
+        wheat: 0
+    };
+
+    // New global variables for game state management
+    let nationalBudget = 0;
+    let allPlacedResourceSpots = []; // Stores all generated resource spot markers
 
     const flagDisplay = document.getElementById('flag-emoji');
     const countryDisplay = document.getElementById('country-name');
 
     // --- DATA ---
-    // Correction des noms: "Forêt" pour bâtiment bois, "Brise-roche" pour pierre, "Puits de Pétrole"
     let buildings = {
         fer: { id:'fer', name: 'Site Minier', built: 0, level: 1, costBuild: 10000, costUp: 50000, baseProd: 2, reqPop: 7000000 },
         oil: { id:'oil', name: 'Puits de Pétrole', built: 0, level: 1, costBuild: 25000, costUp: 100000, baseProd: 1, reqPop: 9000000 },
@@ -256,15 +289,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let globalZoneCounts = { fer: 0, oil: 0, stone: 0, wood: 0, wheat: 0 };
 
     const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹", "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧", "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹", "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳", "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭", "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Congo": "🇨🇬", "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿", "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱", "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷", "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮", "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪", "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳", "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺", "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰", "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧", "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹", "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻", "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺", "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳", "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮", "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴", "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦", "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼", "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲", "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨", "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧", "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸", "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱", "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺", "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭", "Falkland Islands": "🇫🇰", "Antarctica": "🇦🇶" };
-    
+
     const surfaceData = { "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024, "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086, "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195, "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192, "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450, "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590, "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329, "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730, "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442, "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752, "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424, "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340, "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857, "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969, "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120, "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100, "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763, "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000, "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871, "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785, "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751, "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61, "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49 };
-    
+
     // --- ICONES SVG ---
     const svgIcons = {
+        fer_unbuilt: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); opacity: 0.6;"><path d="M32 4 L48 24 L32 60 L16 24 Z" fill="#bdc3c7" stroke="#7f8c8d" stroke-width="2"/><circle cx="32" cy="18" r="6" fill="#ecf0f1" opacity="0.8"/><rect x="28" y="50" width="8" height="6" fill="#7f8c8d" stroke="#333"/><path d="M32 50 L32 40" stroke="#333" stroke-width="2"/></svg>`, // Simple unbuilt mine icon
         fer: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient><linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient></defs><path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/><path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/><path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M26 60 L26 64 M38 60 L38 64" stroke="#212121" stroke-width="3"/><path d="M24 62 H40" stroke="#3e2723" stroke-width="3"/><circle cx="32" cy="18" r="4" fill="#eceff1" opacity="0.6"/><rect x="27" y="52" width="10" height="6" fill="#455a64" stroke="#000"/><circle cx="28" cy="60" r="2" fill="#000"/><circle cx="36" cy="60" r="2" fill="#000"/><rect x="28" y="53" width="8" height="3" fill="#b0bec5"/></svg>`,
+        oil_unbuilt: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); opacity: 0.6;"><circle cx="32" cy="32" r="20" fill="#34495e" stroke="#2c3e50" stroke-width="2"/><path d="M28 22 L32 10 L36 22" stroke="#e74c3c" stroke-width="3" fill="none"/><rect x="28" y="30" width="8" height="18" fill="#2c3e50"/></svg>`, // Simple unbuilt oil icon
         oil: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#78909c"/><stop offset="100%" stop-color="#263238"/></linearGradient></defs><rect x="8" y="56" width="48" height="6" fill="#90a4ae" stroke="#37474f"/><path d="M24 56 L32 24 L40 56" fill="none" stroke="#263238" stroke-width="4"/><rect x="28" y="16" width="8" height="12" fill="url(#metalGrad)" stroke="#000"/><path d="M14 34 L54 22" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M54 22 L54 30" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M8 34 Q4 38 8 46" stroke="#212121" stroke-width="3" fill="none"/><line x1="8" y1="46" x2="8" y2="56" stroke="#212121" stroke-width="3"/><circle cx="32" cy="24" r="3" fill="#fff" stroke="#000" stroke-width="2"/><path d="M48 56 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/><path d="M54 52 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/></svg>`,
+        stone_unbuilt: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); opacity: 0.6;"><rect x="18" y="18" width="28" height="28" fill="#7f8c8d" stroke="#546e7a" stroke-width="2"/><path d="M22 28 L42 28 L32 48 Z" fill="#bdc3c7"/><path d="M22 28 L42 28 L32 8 Z" fill="#95a5a6"/></svg>`, // Simple unbuilt stone icon
         stone: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient></defs><path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/><path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/><path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/><circle cx="16" cy="54" r="4" fill="#6d4c41"/><circle cx="48" cy="52" r="5" fill="#5d4037"/><circle cx="50" cy="20" r="3" fill="#795548"/><path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/><path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/><path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/><line x1="50" y1="14" x2="50" y2="35" stroke="#212121" stroke-width="2"/><line x1="50" y1="14" x2="38" y2="28" stroke="#212121" stroke-width="2"/><rect x="35" y="28" width="6" height="4" fill="#f1c40f"/></svg>`,
+        wood_unbuilt: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); opacity: 0.6;"><rect x="28" y="10" width="8" height="40" fill="#a1887f" stroke="#5d4037" stroke-width="2"/><path d="M22 30 L32 6 L42 30 Z" fill="#43a047"/></svg>`, // Simple unbuilt wood icon
         wood: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient></defs><path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/><path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/><path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/><path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/><rect x="12" y="55" width="4" height="6" fill="#3e2723"/><path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/><rect x="48" y="55" width="4" height="6" fill="#3e2723"/><path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/><rect x="30" y="58" width="4" height="6" fill="#5d4037"/><circle cx="52" cy="58" r="3" fill="#d7ccc8" stroke="#5d4037"/><rect x="38" y="55" width="10" height="4" fill="#8d6e63" rx="2" transform="rotate(10 38 55)"/></svg>`,
+        wheat_unbuilt: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); opacity: 0.6;"><circle cx="32" cy="32" r="20" fill="#f1c40f" stroke="#f39c12" stroke-width="2"/><path d="M32 12 V52" stroke="#e67e22" stroke-width="4" stroke-linecap="round"/></svg>`, // Simple unbuilt wheat icon
         wheat: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><rect x="2" y="30" width="60" height="30" fill="#f9a825" rx="4" /><path d="M4 30 Q10 40 16 30 T28 30 T40 30 T52 30 T64 30" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M4 40 Q10 50 16 40 T28 40 T40 40 T52 40 T64 40" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M10 30 V15" stroke="#f9a825" stroke-width="2"/><ellipse cx="10" cy="15" rx="3" ry="6" fill="#fdd835"/><path d="M25 35 V10" stroke="#f9a825" stroke-width="2"/><ellipse cx="25" cy="10" rx="4" ry="8" fill="#fdd835"/><path d="M40 32 V12" stroke="#f9a825" stroke-width="2"/><ellipse cx="40" cy="12" rx="4" ry="7" fill="#fdd835"/><rect x="48" y="32" width="14" height="10" fill="#c0392b"/><circle cx="50" cy="42" r="3" fill="#333"/><circle cx="60" cy="42" r="3" fill="#333"/><rect x="60" y="34" width="2" height="8" fill="#f1c40f"/></svg>`
     };
 
@@ -286,12 +324,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateWorkerDistribution = function() {
         const sliders = document.querySelectorAll('.prio-slider');
         const weights = Array.from(sliders).map(s => parseInt(s.value));
-        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
         const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
         const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
         weights.forEach((weight, index) => {
             const id = resourceIds[index];
-            const relativePct = (weight / totalWeight); 
+            const relativePct = (weight / totalWeight);
             const displayPct = Math.round(relativePct * 100);
             const workersForResource = totalWorkersAvailable * relativePct;
             const workersFormatted = formatPopNumber(workersForResource);
@@ -310,11 +348,35 @@ document.addEventListener('DOMContentLoaded', () => {
         timeLeft--;
         const timerEl = document.getElementById('timer');
         if(timerEl) timerEl.innerText = timeLeft;
-        if (timeLeft <= 0) { 
-            clearInterval(window.gameTimer); 
-            document.getElementById('game-over').style.display = 'flex'; 
+        if (timeLeft <= 0) {
+            clearInterval(window.gameTimer);
+            document.getElementById('game-over').style.display = 'flex';
         }
     }, 1000);
+
+    window.gameTick = function() {
+        const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
+        resourceIds.forEach(id => {
+            const b = buildings[id];
+            const productionPerHour = b.built * b.level * b.baseProd;
+            const productionPerTick = productionPerHour / SECONDS_PER_HOUR * (TICK_INTERVAL_MS / 1000);
+
+            currentResourceStocks[id] = Math.min(MAX_RESOURCE_CAP, currentResourceStocks[id] + productionPerTick);
+
+            const valElement = document.getElementById(`val-${id}`);
+            const stockElement = document.getElementById(`stock-${id}`);
+            if (valElement) valElement.innerText = currentResourceStocks[id].toFixed(2).replace('.', ',') + " T";
+            if (stockElement) stockElement.style.width = (currentResourceStocks[id] / MAX_RESOURCE_CAP * 100) + "%";
+        });
+    };
+
+    // Function to update the money display
+    function updateMoneyDisplay() {
+        const moneyValElement = document.getElementById('money-val');
+        if (moneyValElement) {
+            moneyValElement.innerText = nationalBudget.toLocaleString('en-US').replace(/,/g, ' ') + " $";
+        }
+    }
 
     // --- FONCTIONS CARTE ---
     function getFlagEmoji(isoCode, countryName) {
@@ -323,35 +385,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const code = isoCode.toUpperCase();
             return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
         }
-        return "🌐"; 
+        return "🌐";
     }
 
-    // Fonction de calcul de surface simplifiée utilisant Turf si la donnée brute manque
     function getArea(name, layer) {
         if (surfaceData[name]) return surfaceData[name];
-        // Tentative de mapping manuel si le nom GeoJSON diffère de surfaceData
         if (name === "United States of America") return surfaceData["United States of America"];
-        // Fallback géométrique via Leaflet bounds (très approximatif)
         const bounds = layer.getBounds();
         let width = Math.abs(bounds.getEast() - bounds.getWest());
         const height = Math.abs(bounds.getNorth() - bounds.getSouth());
-        if (width > 200) width = 360 - width; 
+        if (width > 200) width = 360 - width;
         return (width * 111) * (height * 111);
     }
 
     function calculateBudget(area) {
-        const minArea = 0.49; const maxArea = 17098242; const minBudget = 200000; const maxBudget = 5000000;   
+        const minArea = 0.49; const maxArea = 17098242; const minBudget = 200000; const maxBudget = 5000000;
         const safeArea = Math.max(minArea, area);
-        // INVERSE: Plus c'est petit, plus on a d'argent (ratio 0 -> maxBudget)
         const ratio = (Math.log(safeArea) - Math.log(minArea)) / (Math.log(maxArea) - Math.log(minArea));
         let money = maxBudget - (ratio * (maxBudget - minBudget));
-        return Math.round(money / 1000) * 1000; 
+        return Math.round(money / 1000) * 1000;
     }
 
     function calculateResource(area, minRes, maxRes) {
         const minArea = 0.49; const maxArea = 17098242;
         const safeArea = Math.max(minArea, area);
-        // INVERSE: Plus c'est petit, plus on a de ressources de départ
         const ratio = (Math.log(safeArea) - Math.log(minArea)) / (Math.log(maxArea) - Math.log(minArea));
         let amount = maxRes - (ratio * (maxRes - minRes));
         return Math.round(amount * 100) / 100;
@@ -360,25 +417,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- GENERATION DES ZONES ---
     function generateResourceZones(layer, area) {
         resourceLayers.clearLayers();
-        
-        // Logique inverse: Petit pays = PEU de zones, Grand pays = BEAUCOUP de zones
-        // MAIS attention au budget qui est inverse. Ici on veut que la carte soit remplie proportionnellement.
-        let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
+        allPlacedResourceSpots = []; // Clear previous spots
+
+        let numZones = Math.floor(10 + Math.pow(area, 0.18));
         numZones = Math.max(10, Math.min(50, numZones));
 
         globalZoneCounts = { fer: 0, oil: 0, stone: 0, wood: 0, wheat: 0 };
-        
-        // Noms dans le compteur en bas à droite
+
         const displayBuildings = { fer: "Site Minier", oil: "Puits de Pétrole", stone: "Brise-roche", wood: "Forêt", wheat: "Ferme Agricole" };
         const displayNames = { fer: "Mines", oil: "Puits", stone: "Carrières", wood: "Forêts", wheat: "Champs de Blé" };
         const resourceColors = { fer: '#bdc3c7', oil: '#4a69bd', stone: '#95a5a6', wood: '#2ecc71', wheat: '#f1c40f' };
-        
-        const types = [ {id:'fer', icon: svgIcons.fer}, {id:'oil', icon: svgIcons.oil}, {id:'stone', icon: svgIcons.stone}, {id:'wood', icon: svgIcons.wood}, {id:'wheat', icon: svgIcons.wheat} ];
+
+        const types = [
+            {id:'fer', icon: svgIcons.fer_unbuilt, builtIcon: svgIcons.fer},
+            {id:'oil', icon: svgIcons.oil_unbuilt, builtIcon: svgIcons.oil},
+            {id:'stone', icon: svgIcons.stone_unbuilt, builtIcon: svgIcons.stone},
+            {id:'wood', icon: svgIcons.wood_unbuilt, builtIcon: svgIcons.wood},
+            {id:'wheat', icon: svgIcons.wheat_unbuilt, builtIcon: svgIcons.wheat}
+        ];
 
         const geoJson = layer.toGeoJSON();
         const bbox = turf.bbox(geoJson);
         let zonesCreated = 0, attempts = 0;
-        
+
         while (zonesCreated < numZones && attempts < 20000) {
             attempts++;
             const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
@@ -386,15 +447,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 let type = types[Math.floor(Math.random() * types.length)];
                 const lat = randomPoint.geometry.coordinates[1];
                 const lng = randomPoint.geometry.coordinates[0];
-                const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
-                
-                const circle = L.circle([lat, lng], { color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: radius, weight: 1, opacity: 0 }).addTo(resourceLayers);
+                // Using a fixed radius for resource spots for now. This could be dynamic based on resource density.
+                const resourceSpotRadius = 25000; // 25 km radius for resource spot influence
+
+                const circle = L.circle([lat, lng], { color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: resourceSpotRadius, weight: 1, opacity: 0 }).addTo(resourceLayers);
                 const icon = L.divIcon({ className: 'resource-icon', html: `<div style="width:56px; height:56px;">${type.icon}</div>`, iconSize: [56, 56], iconAnchor: [28, 28] });
                 const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
-                
-                marker.on('mouseover', () => circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }));
-                marker.on('mouseout', () => circle.setStyle({ fillOpacity: 0.0, opacity: 0 }));
-                
+
+                marker.resourceType = type.id; // Store resource type on the marker
+                marker.isBuilt = false;        // Mark as unbuilt
+                marker.builtIconHtml = type.builtIcon; // Store the built icon HTML
+                marker.unbuiltIconHtml = type.icon; // Store the unbuilt icon HTML
+                marker.resourceZoneCircle = circle; // Link circle to marker
+
+                marker.on('mouseover', () => {
+                    if (!marker.isBuilt) {
+                        circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 });
+                    }
+                });
+                marker.on('mouseout', () => {
+                    if (!marker.isBuilt) {
+                        circle.setStyle({ fillOpacity: 0.0, opacity: 0 });
+                    }
+                });
+
+                allPlacedResourceSpots.push(marker); // Add to global list
                 globalZoneCounts[type.id]++;
                 zonesCreated++;
             }
@@ -406,14 +483,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ['fer', 'oil', 'stone', 'wood', 'wheat'].forEach(key => {
             const count = globalZoneCounts[key];
             const color = resourceColors[key];
-            // Correspondance correcte des noms demandés
             const itemHTML = `
                 <div class="rc-item">
                     <div class="rc-main-row">
                         <span class="rc-label" style="color: ${color}">
-                            <span class="rc-icon" style="width:24px; height:24px; display:inline-block;">${svgIcons[key]}</span> 
+                            <span class="rc-icon" style="width:24px; height:24px; display:inline-block;">${svgIcons[`${key}_unbuilt`]}</span>
                             ${displayNames[key]}
-                        </span> 
+                        </span>
                         <span class="rc-val">${count}</span>
                     </div>
                     <div class="rc-sub-row" style="color: ${color}; filter: brightness(0.8);">
@@ -437,10 +513,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ['fer', 'oil', 'stone', 'wood', 'wheat'].forEach(key => {
             const b = buildings[key];
             const max = globalZoneCounts[key];
+            const unbuiltCount = max - b.built;
             const unitGain = b.baseProd * b.level;
             const totalGain = unitGain * b.built;
             const card = document.createElement('div');
             card.className = 'b-card';
+            card.id = `building-card-${key}`; // Add an ID for easy reference
+            card.draggable = 'true'; // Make the card draggable
             card.innerHTML = `
                 <div class="b-header">
                     <div class="b-icon" style="width:32px; height:32px;">${svgIcons[key]}</div>
@@ -452,34 +531,126 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="b-stats-row"><span>Total: <span class="b-total-gain">+${totalGain} T/h</span></span></div>
                 </div>
                 <div class="b-actions">
-                    <button class="b-btn btn-build" onclick="buildBuilding('${key}')">Construire (${b.costBuild}$)</button>
-                    <button class="b-btn btn-upg" onclick="upgradeBuilding('${key}')">Améliorer (${b.costUp}$)</button>
+                    <button class="b-btn btn-build" onclick="buildBuilding('${key}')" ${unbuiltCount <= 0 || nationalBudget < b.costBuild ? 'disabled' : ''}>Construire (${b.costBuild}$)</button>
+                    <button class="b-btn btn-upg" onclick="upgradeBuilding('${key}')" ${b.built === 0 || b.level >= 5 || nationalBudget < b.costUp ? 'disabled' : ''}>Améliorer (${b.costUp}$)</button>
                 </div>
                 <div class="b-req">Population requise: ${(b.reqPop/1000000).toFixed(1)}M</div>`;
             listContainer.appendChild(card);
+
+            // Attach dragstart event listener
+            card.addEventListener('dragstart', (event) => {
+                event.dataTransfer.setData('text/plain', key); // Store the building type
+                event.dataTransfer.effectAllowed = 'copy';
+            });
         });
     }
 
-    // --- FONCTIONS GLOBAL (window) ---
-    window.buildBuilding = function(type) {
-        const b = buildings[type];
-        if (b.built < globalZoneCounts[type]) {
-            b.built++;
-            renderBuildingMenu();
-            // MAJ Panneau Droite
-            const items = document.querySelectorAll('.rc-item');
-            const targetIndex = ['fer', 'oil', 'stone', 'wood', 'wheat'].indexOf(type);
-            if(items[targetIndex]) {
-                 const subRow = items[targetIndex].querySelector('.rc-sub-row span');
-                 if(subRow) subRow.innerText = b.built;
+    // Function to handle placing a building on the map
+    function tryPlaceBuilding(buildingType, dropLatLng) {
+        if (!hqLocked) return false; // Must be in game mode
+        if (!selectedLayer || !turf.booleanPointInPolygon(turf.point([dropLatLng.lng, dropLatLng.lat]), selectedLayer.feature)) {
+            alert("Vous ne pouvez construire qu'à l'intérieur de votre territoire !");
+            return false;
+        }
+
+        const buildingDef = buildings[buildingType];
+        if (nationalBudget < buildingDef.costBuild) {
+            alert("Budget insuffisant pour construire ce bâtiment.");
+            return false;
+        }
+
+        // Find the closest unbuilt resource spot of the correct type
+        let closestUnbuiltSpot = null;
+        let minDistance = Infinity;
+
+        allPlacedResourceSpots.forEach(spot => {
+            if (!spot.isBuilt && spot.resourceType === buildingType) {
+                const spotLatLng = spot.getLatLng();
+                // Leaflet's distanceTo method gives distance in meters
+                const distance = dropLatLng.distanceTo(spotLatLng);
+
+                if (distance < GHOST_MARKER_RADIUS && distance < minDistance) { // Check within ghost marker radius
+                    minDistance = distance;
+                    closestUnbuiltSpot = spot;
+                }
             }
-        } else { alert("Maximum de zones exploitées pour ce type !"); }
+        });
+
+        if (closestUnbuiltSpot) {
+            // Check if max number of this building type has been reached for available zones
+            if (buildingDef.built >= globalZoneCounts[buildingType]) {
+                alert(`Toutes les zones disponibles pour les ${buildingDef.name} ont déjà été exploitées.`);
+                return false;
+            }
+
+            // Deduct cost and update budget
+            nationalBudget -= buildingDef.costBuild;
+            updateMoneyDisplay();
+
+            // Mark the spot as built
+            closestUnbuiltSpot.isBuilt = true;
+            buildingDef.built++;
+
+            // Update the marker icon to the built version
+            const builtIcon = L.divIcon({ className: 'resource-icon built-resource-icon', html: `<div style="width:56px; height:56px;">${closestUnbuiltSpot.builtIconHtml}</div>`, iconSize: [56, 56], iconAnchor: [28, 28] });
+            closestUnbuiltSpot.setIcon(builtIcon);
+
+            // Update the associated circle (e.g., make it more visible to show occupied)
+            closestUnbuiltSpot.resourceZoneCircle.setStyle({ fillOpacity: 0.3, opacity: 0.8, color: 'var(--green)', fillColor: 'var(--green)' });
+
+            renderBuildingMenu();
+            updateResourceCounterBuiltCount(buildingType);
+            alert(`${buildingDef.name} construit avec succès !`);
+            return true;
+        } else {
+            alert("Aucune zone d'extraction libre de ce type trouvée à proximité. Essayez de déposer plus près d'une zone non exploitée.");
+            return false;
+        }
+    }
+
+    function updateResourceCounterBuiltCount(type) {
+        const items = document.querySelectorAll('.rc-item');
+        const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
+        const targetIndex = resourceIds.indexOf(type);
+        if(items[targetIndex]) {
+             const subRowSpan = items[targetIndex].querySelector('.rc-sub-row span');
+             if(subRowSpan) subRowSpan.innerText = buildings[type].built;
+        }
+    }
+
+    // --- FONCTIONS GLOBAL (window) ---
+    // Modified buildBuilding function to use the common placement logic
+    window.buildBuilding = function(type) {
+        // For button clicks, we'll try to find any available unbuilt spot of the correct type
+        let foundSpotLatLng = null;
+        for (let i = 0; i < allPlacedResourceSpots.length; i++) {
+            const spot = allPlacedResourceSpots[i];
+            if (!spot.isBuilt && spot.resourceType === type) {
+                foundSpotLatLng = spot.getLatLng();
+                break;
+            }
+        }
+
+        if (foundSpotLatLng) {
+            // Call the shared placement logic
+            tryPlaceBuilding(type, foundSpotLatLng);
+        } else {
+            alert(`Aucune zone d'extraction libre de type ${buildings[type].name} disponible.`);
+        }
     };
 
     window.upgradeBuilding = function(type) {
         const b = buildings[type];
         if (b.level < 5) {
+            if (nationalBudget < b.costUp) {
+                alert("Budget insuffisant pour améliorer ce bâtiment.");
+                return;
+            }
+            nationalBudget -= b.costUp;
+            updateMoneyDisplay();
+
             b.level++; b.costUp *= 2; renderBuildingMenu();
+            alert(`${b.name} amélioré au niveau ${b.level} !`);
         } else { alert("Niveau Max atteint !"); }
     };
 
@@ -494,7 +665,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedLayer) return;
         hqLocked = true;
         selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
-        generateResourceZones(selectedLayer, currentArea);
+
+        nationalBudget = calculateBudget(currentArea); // Initialize national budget
+        updateMoneyDisplay(); // Display initial budget
+
+        generateResourceZones(selectedLayer, currentArea); // Generates resource spots and populates allPlacedResourceSpots
         document.getElementById('side-menu').classList.add('active');
         document.getElementById('toggle-btn').style.display = 'block';
         document.getElementById('toggle-btn').style.left = "360px";
@@ -510,6 +685,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const gtEl = document.getElementById('game-timer');
             if(gtEl) gtEl.innerText = `${m}:${s}`;
         }, 1000);
+
+        currentResourceStocks.fer = parseFloat(document.getElementById('val-fer').innerText.replace(',', '.'));
+        currentResourceStocks.oil = parseFloat(document.getElementById('val-oil').innerText.replace(',', '.'));
+        currentResourceStocks.stone = parseFloat(document.getElementById('val-stone').innerText.replace(',', '.'));
+        currentResourceStocks.wood = parseFloat(document.getElementById('val-wood').innerText.replace(',', '.'));
+        currentResourceStocks.wheat = parseFloat(document.getElementById('val-wheat').innerText.replace(',', '.'));
+
+        if (resourceProductionInterval) clearInterval(resourceProductionInterval);
+        resourceProductionInterval = setInterval(window.gameTick, TICK_INTERVAL_MS);
+
         map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
     };
 
@@ -520,6 +705,47 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerText = isOpen ? "<" : ">";
         btn.style.left = isOpen ? "360px" : "0";
     };
+
+    // Map Drag-and-Drop Handlers
+    map.on('dragenter', function(e) {
+        if (!hqLocked) return;
+        e.originalEvent.preventDefault(); // Important: allows dropping
+    });
+
+    map.on('dragover', function(e) {
+        if (!hqLocked) return;
+        e.originalEvent.preventDefault(); // Important: allows dropping
+
+        if (!ghostMarker) {
+            ghostMarker = L.circle(e.latlng, { radius: GHOST_MARKER_RADIUS, ...GHOST_MARKER_STYLE }).addTo(map);
+        } else {
+            ghostMarker.setLatLng(e.latlng);
+        }
+    });
+
+    map.on('dragleave', function() {
+        if (ghostMarker) {
+            map.removeLayer(ghostMarker);
+            ghostMarker = null;
+        }
+    });
+
+    map.on('drop', function(e) {
+        if (!hqLocked) return; // Must be in game mode
+        e.originalEvent.preventDefault();
+
+        if (ghostMarker) {
+            map.removeLayer(ghostMarker);
+            ghostMarker = null;
+        }
+
+        const buildingType = e.originalEvent.dataTransfer.getData('text/plain');
+        const dropLatLng = e.latlng;
+
+        if (buildingType) {
+            tryPlaceBuilding(buildingType, dropLatLng);
+        }
+    });
 
     // Chargement GeoJSON
     fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -556,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
                     selectedLayer = this;
                     this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
-                    
+
                     const p = feature.properties;
                     const name = p.ADMIN || p.name;
                     const iso = p.ISO_A2 || p.iso_a2 || "";
@@ -566,40 +792,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentArea = getArea(name, layer);
 
                     let basePop = 0.5; let resMultiplier = 1.0; let calculatedPop = 0.5;
-                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; } 
-                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; } 
-                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; } 
-                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; } 
+                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; }
+                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; }
+                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; }
+                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; }
                     else { resMultiplier = 1.0; calculatedPop = basePop; }
 
                     currentPopulationMillions = calculatedPop;
                     document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
-                    window.updateWorkerDistribution(); 
+                    window.updateWorkerDistribution();
 
-                    const budget = calculateBudget(currentArea);
-                    document.getElementById('money-val').innerText = budget.toLocaleString('en-US').replace(/,/g, ' ') + " $";
-
-                    const capMax = 1000; 
+                    const budget = calculateBudget(currentArea); // Calculate budget
+                    document.getElementById('money-val').innerText = budget.toLocaleString('en-US').replace(/,/g, ' ') + " $"; // Display it
 
                     let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
                     document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
+                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / MAX_RESOURCE_CAP * 100)) + "%";
 
                     let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
                     document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
+                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / MAX_RESOURCE_CAP * 100)) + "%";
 
                     let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
                     document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
+                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / MAX_RESOURCE_CAP * 100)) + "%";
 
                     let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
                     document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
+                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / MAX_RESOURCE_CAP * 100)) + "%";
 
                     let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
                     document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
+                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / MAX_RESOURCE_CAP * 100)) + "%";
 
                     document.getElementById('action-zone').innerHTML = `
                         <button id="btn-hq" onclick="lockHQ()">ÉTABLIR QG</button>`;
