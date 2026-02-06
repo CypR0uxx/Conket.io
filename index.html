@@ -2,614 +2,385 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OpenFront 1918 - Drapeaux Mondiaux & Ressources</title>
-    <!-- Chargement des librairies -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAR ROOM : TOTAL STRATEGY</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { 
-            --blue: #00d4ff; --red: #ff3131; --gold: #ffd700; --green: #2ecc71;
-            --bg: #111; --header-bg: #000; --text: #fff; --panel: #1a1a1a; --border: #333;
-            --iron: #bdc3c7; --stone: #7f8c8d; --oil: #2c3e50; --wood: #27ae60; --wheat: #f1c40f;
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            /* THEME TACTIQUE */
+            --bg-ui: #f0f2f5;
+            --bg-panel: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #666;
+            --border-ui: #ccc;
+            --btn-bg: #2c3e50;
+            --btn-txt: #fff;
+            
+            /* CARTE CLAIRE */
+            --map-sea: #d4dadc;
+            --land-fill: #ffffff;
+            --land-stroke: #888;
+            --land-hover: #555;
+            --land-active: #222;
         }
-        
-        * { cursor: crosshair !important; box-sizing: border-box; }
 
-        body { margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; color: var(--text); }
+        [data-theme="cyber"] {
+            /* THEME CYBER */
+            --bg-ui: #000000;
+            --bg-panel: #0a0a0a;
+            --text-main: #00ffcc;
+            --text-muted: #006655;
+            --border-ui: #004433;
+            --btn-bg: #00ffcc;
+            --btn-txt: #000;
 
-        #info-header {
-            width: 100%; height: 120px;
-            background: var(--header-bg);
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 4px solid var(--blue); padding: 0 30px; z-index: 1001;
+            /* CARTE SOMBRE */
+            --map-sea: #020202;
+            --land-fill: #111;
+            --land-stroke: #003322;
+            --land-hover: #002211;
+            --land-active: #00ffcc;
         }
 
-        .flag-frame { 
-            width: 110px; height: 80px; 
-            border: 2px solid var(--blue); 
-            background: #222; 
-            display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden;
-            font-size: 3.5em; 
-            border-radius: 12px;
-            box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.2);
-        }
-        
-        #flag-emoji { line-height: 1; display: block; cursor: default; }
+        body { margin: 0; font-family: 'Share Tech Mono', monospace; background: var(--bg-ui); color: var(--text-main); overflow: hidden; transition: 0.3s; }
 
-        #main-view { display: flex; flex-grow: 1; width: 100%; position: relative; overflow: hidden; }
+        /* --- CARTE --- */
+        #map { height: 100vh; width: 100vw; z-index: 1; background: var(--map-sea); transition: background 0.5s; }
         
-        #side-menu { 
-            width: 0; background: var(--panel); overflow-y: auto; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex; flex-direction: column; z-index: 1000;
+        /* Styles des pays */
+        path.country-poly {
+            fill: var(--land-fill); stroke: var(--land-stroke); stroke-width: 1px;
+            transition: all 0.3s; vector-effect: non-scaling-stroke;
         }
-        #side-menu.active { width: 360px; border-right: 2px solid var(--blue); } 
-        
-        .menu-content { width: 340px; padding: 20px; opacity: 0; transition: 0.3s; }
-        #side-menu.active .menu-content { opacity: 1; }
+        path.country-poly:hover { fill: var(--land-hover) !important; stroke-width: 2px; cursor: pointer; }
+        path.country-poly.active-country { fill: var(--land-hover) !important; stroke: var(--land-active) !important; stroke-width: 2px; }
 
-        .money-box { background: #000; padding: 10px; border: 1px dashed var(--gold); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        .res-item { display: flex; flex-direction: column; margin: 15px 0; font-size: 0.9em; border-left: 3px solid var(--blue); padding-left: 10px; }
-        .res-header { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; font-weight: bold; }
-        .res-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
-        .res-fill { height: 100%; transition: width 0.5s ease; }
-
-        .pop-section { margin-top: 30px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px; }
-        .ratio-container { width: 100%; height: 25px; display: flex; margin: 10px 0; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
-        .ratio-workers { background: var(--blue); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #000; }
-        .ratio-soldiers { background: var(--red); height: 100%; transition: 0.5s; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; }
-        
-        .worker-dist-section { margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px; }
-        .sub-gauge-row { margin-bottom: 12px; }
-        .sub-gauge-label { font-size: 0.75em; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .sub-gauge-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
-        .sub-gauge-fill { height: 100%; transition: width 0.2s ease-out; }
-        
-        .prio-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; outline: none; border-radius: 2px; cursor: pointer; }
-        .prio-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #000; }
-
-        #toggle-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--blue); border: none; width: 25px; height: 50px; display: none; z-index: 2000; font-weight: bold; cursor: pointer; border-radius: 0 5px 5px 0; }
-        #map { flex-grow: 1; background: #0b0b0b !important; }
-        
-        #game-over { position: fixed; inset: 0; background: rgba(20, 0, 0, 0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
-        .btn-restart { margin-top: 20px; padding: 12px 24px; background: var(--red); border: none; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        
-        /* Styles Icônes Map */
-        .resource-icon { 
-            text-align: center; line-height: 1;
-            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.8)); 
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        /* --- HUD --- */
+        #top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 40px;
+            background: var(--bg-ui); border-bottom: 1px solid var(--border-ui);
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            z-index: 1000; font-size: 13px; padding-top: 5px;
         }
-        .resource-icon:hover { transform: scale(1.4) translateY(-8px); z-index: 2000 !important; filter: drop-shadow(8px 12px 6px rgba(0,0,0,0.9)); }
-        
-        /* Bouton QG */
-        #btn-hq {
-            background: linear-gradient(135deg, var(--blue) 0%, #0099cc 100%); 
-            border: 2px solid #fff; padding: 12px 24px; 
-            font-weight: 800; color: white; cursor: pointer; border-radius: 6px;
-            font-size: 1.1em; transition: 0.2s; 
-            box-shadow: 0 0 15px var(--blue); text-transform: uppercase; letter-spacing: 1px;
-        }
-        #btn-hq:hover { background: #fff; color: var(--blue); transform: scale(1.05); }
+        .res-box i { margin-right: 3px; color: var(--text-muted); }
+        [data-theme="cyber"] .res-box i { color: var(--text-main); }
 
-        /* Compteur de Zones */
-        #resource-counter {
-            position: absolute; bottom: 30px; right: 20px;
-            width: 250px; background: rgba(20, 20, 20, 0.95); 
-            border: 2px solid var(--blue); border-radius: 8px; padding: 12px; z-index: 1000;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(0); 
+        /* --- MENU --- */
+        #side-menu {
+            position: absolute; top: 45px; left: 0; bottom: 0; width: 340px;
+            background: var(--bg-panel); border-right: 1px solid var(--border-ui);
+            display: flex; flex-direction: column; z-index: 1000; transition: 0.3s;
         }
-        #resource-counter.closed { right: -290px; }
-        #toggle-rc-btn {
-            position: absolute; left: -25px; top: 50%; transform: translateY(-50%);
-            background: var(--blue); border: none; width: 25px; height: 50px;
-            cursor: pointer; font-weight: bold; color: #000; border-radius: 5px 0 0 5px; 
+        .panel-head { padding: 10px; text-align: center; border-bottom: 1px solid var(--border-ui); font-size: 16px; font-weight: bold; background: var(--bg-ui); }
+        .scroll-area { flex: 1; overflow-y: auto; }
+
+        /* LISTE */
+        .list-item { padding: 6px 15px; border-bottom: 1px solid var(--border-ui); cursor: pointer; font-size: 12px; color: var(--text-muted); }
+        .list-item:hover { background: var(--bg-ui); color: var(--text-main); border-left: 3px solid var(--text-main); }
+        .list-item.active { background: var(--btn-bg); color: var(--btn-txt); font-weight: bold; }
+
+        /* BATIMENTS */
+        .build-card { padding: 10px; border-bottom: 1px solid var(--border-ui); background: var(--bg-panel); }
+        .build-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .build-desc { font-size: 10px; color: var(--text-muted); margin-bottom: 5px; font-style: italic; }
+        .build-cost { font-size: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; color: var(--text-muted); margin-bottom: 8px; }
+        
+        button.btn-action {
+            width: 100%; padding: 8px; background: var(--btn-bg); color: var(--btn-txt); border: none;
+            cursor: pointer; font-family: inherit; font-weight: bold; text-transform: uppercase; font-size: 12px;
+        }
+        button.btn-action:hover { opacity: 0.8; }
+        
+        /* --- ELEMENTS JEU --- */
+        .token {
             display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; width: 100%; height: 100%;
+            background: var(--bg-panel); border: 2px solid var(--text-main); color: var(--text-main);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
         }
-        .rc-header { font-size: 0.75em; color: var(--gold); border-bottom: 1px solid #444; margin-bottom: 10px; padding-bottom: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .rc-item { margin-bottom: 12px; border-bottom: 1px dashed #333; padding-bottom: 5px; }
-        .rc-main-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.0em; margin-bottom: 2px; }
-        .rc-sub-row { font-size: 0.75em; text-align: right; font-style: italic; }
-        .rc-label { display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        .rc-icon svg { width: 24px; height: 24px; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)); vertical-align: middle; }
-        .rc-total { margin-top: 8px; padding-top: 5px; text-align: right; font-size: 0.9em; color: var(--blue); font-weight: bold; }
-        .rc-val { font-family: monospace; font-weight: bold; color: #fff; font-size: 1.1em; }
+        .crosshair { cursor: crosshair !important; }
+        #day-night-overlay { pointer-events: none; position: absolute; top:0; left:0; width:100%; height:100%; z-index: 500; mix-blend-mode: multiply; transition: opacity 2s; }
 
-        /* Chronomètre */
-        #game-timer { font-family: monospace; font-size: 2.2em; color: var(--green); font-weight: bold; background: #000; padding: 5px 15px; border: 1px solid var(--green); border-radius: 4px; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
-
-        /* Batiments */
-        .buildings-container { margin-top: 25px; padding-top: 15px; border-top: 2px solid var(--blue); }
-        .b-card { background: #111; border: 1px solid #333; border-radius: 6px; padding: 12px; margin-bottom: 15px; position: relative; overflow: hidden; transition: 0.2s; }
-        .b-card:hover { border-color: var(--blue); box-shadow: 0 0 8px rgba(0, 212, 255, 0.1); }
-        .b-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .b-icon { width: 32px; height: 32px; display: flex; align-items: center; }
-        .b-title { font-weight: bold; font-size: 0.9em; color: #fff; flex-grow: 1; }
-        .b-level { background: var(--gold); color: #000; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .b-stats-row { font-size: 0.75em; color: #ccc; display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .b-val { color: #fff; font-weight: bold; }
-        .b-total-gain { color: var(--green); font-weight: bold; }
-        .b-actions { display: flex; gap: 5px; margin-top: 8px; }
-        .b-btn { flex: 1; border: none; border-radius: 3px; padding: 6px; font-size: 0.7em; font-weight: bold; cursor: pointer; color: white; text-align: center; transition: 0.2s; }
-        .btn-build { background: linear-gradient(to bottom, #2ecc71, #27ae60); }
-        .btn-build:hover { filter: brightness(1.2); }
-        .btn-upg { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
-        .btn-upg:hover { filter: brightness(1.2); }
-        .b-req { font-size: 0.7em; color: var(--red); margin-top: 6px; text-align: center; font-style: italic; border-top: 1px dotted #444; padding-top: 4px;}
+        /* Loader */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; color: #fff; z-index: 9999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
-<div id="game-over">
-    <h1 style="font-size: 3em; margin-bottom: 10px;">MISSION INTERROMPUE</h1>
-    <p>Le temps imparti pour le déploiement a expiré.</p>
-    <button class="btn-restart" onclick="location.reload()">RÉESSAYER</button>
-</div>
-
-<header id="info-header">
-    <div id="countdown-container">
-        <div id="timer" style="font-size: 2.5em; color: var(--red); font-weight: bold; width: 60px;">15</div>
+    <div id="loader">
+        <i class="fas fa-satellite fa-spin fa-2x"></i>
+        <div style="margin-top:10px;">INITIALISATION DU SYSTÈME GÉOSPATIAL...</div>
     </div>
-    <div style="display: flex; align-items: center; flex-grow: 1; margin-left: 30px;">
-        <div class="flag-frame"><span id="flag-emoji">🌐</span></div>
-        <div id="country-name" style="font-size: 1.8em; margin-left: 20px; font-weight: bold; letter-spacing: 1px;">INITIALISATION...</div>
-    </div>
-    <div id="action-zone"></div>
-</header>
 
-<div id="main-view">
+    <div id="top-bar">
+        <div class="res-box"><i class="fas fa-money-bill"></i><span id="r-money">0</span></div>
+        <div class="res-box"><i class="fas fa-users"></i><span id="r-pop">0</span>M</div>
+        <div class="res-box"><i class="fas fa-person-rifle"></i><span id="r-soldier">0</span></div>
+        <div class="res-box"><i class="fas fa-cubes"></i><span id="r-stone">0</span></div>
+        <div class="res-box"><i class="fas fa-tree"></i><span id="r-wood">0</span></div>
+        <div class="res-box"><i class="fas fa-industry"></i><span id="r-iron">0</span></div>
+        <div class="res-box"><i class="fas fa-oil-well"></i><span id="r-oil">0</span></div>
+        <div class="res-box"><i class="fas fa-radiation"></i><span id="r-nuke">0</span></div>
+        <div style="margin-left:auto; margin-right:10px; border:1px solid var(--text-main); padding:2px 5px;">
+            <span id="clock">12:00</span>
+        </div>
+    </div>
+
     <div id="side-menu">
-        <div class="menu-content">
-            <h3 style="color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 5px; margin-bottom: 15px;">GESTION DU TERRITOIRE</h3>
-            <div id="hq-name" style="color: var(--green); margin-bottom: 20px; font-weight: bold;">---</div>
-
-            <div class="money-box">
-                <span style="font-size: 1.5em;">💰</span>
-                <div style="text-align: left;">
-                    <div style="font-size: 0.7em; color: var(--gold); font-weight: bold;">BUDGET NATIONAL</div>
-                    <div id="money-val" style="font-size: 1.3em; font-family: monospace;">--- $</div>
-                </div>
+        <div id="view-select" style="display:flex; flex-direction:column; height:100%;">
+            <div class="panel-head">CIBLE GÉOGRAPHIQUE</div>
+            <div id="country-list" class="scroll-area"></div>
+            <div style="padding:15px; border-top:1px solid var(--border-ui);">
+                <h3 id="sel-name" style="margin:0 0 5px 0;">---</h3>
+                <div id="sel-desc" style="font-size:11px; margin-bottom:10px; color:var(--text-muted);">En attente de données...</div>
+                <button id="btn-start" class="btn-action" disabled onclick="startGame()">LANCER LA SESSION</button>
             </div>
+        </div>
 
-            <!-- SECTION STOCKS (Max 1000 T) -->
-            <div id="inventory">
-                <div style="font-size: 0.7em; color: var(--gold); margin-bottom: 10px; font-weight: bold;">RÉSERVES D'ÉTAT (Max 1000 T)</div>
-                <div class="res-item"><div class="res-header"><span>Stock Fer</span><span id="val-fer" style="color: var(--iron);">-- T</span></div><div class="res-bar"><div id="stock-fer" class="res-fill" style="width: 0%; background: var(--iron);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Pétrole</span><span id="val-oil" style="color: var(--oil);">-- T</span></div><div class="res-bar"><div id="stock-oil" class="res-fill" style="width: 0%; background: var(--oil);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Pierre</span><span id="val-stone" style="color: var(--stone);">-- T</span></div><div class="res-bar"><div id="stock-stone" class="res-fill" style="width: 0%; background: var(--stone);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Bois</span><span id="val-wood" style="color: var(--wood);">-- T</span></div><div class="res-bar"><div id="stock-wood" class="res-fill" style="width: 0%; background: var(--wood);"></div></div></div>
-                <div class="res-item"><div class="res-header"><span>Stock Blé</span><span id="val-wheat" style="color: var(--wheat);">-- T</span></div><div class="res-bar"><div id="stock-wheat" class="res-fill" style="width: 0%; background: var(--wheat);"></div></div></div>
-            </div>
-
-            <div class="pop-section">
-                <div style="font-size: 0.8em; color: var(--blue); margin-bottom: 10px; font-weight: bold;">POPULATION TOTALE</div>
-                <div class="ratio-container">
-                    <div id="workers-bar" class="ratio-workers" style="width: 70%;">TRAVAIL</div>
-                    <div id="soldiers-bar" class="ratio-soldiers" style="width: 30%;">ARMÉE</div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 8px;">
-                    <span id="pop-total">Pop: ---</span>
-                    <span id="mobilization-text" style="color: var(--red); font-weight: bold;">Mobilisation: 30%</span>
-                </div>
-                <input type="range" min="0" max="100" value="30" style="width:100%; margin-top:15px;" oninput="updateMainRatio(this.value)">
-
-                <div class="worker-dist-section">
-                    <div style="font-size: 0.75em; color: #fff; margin-bottom: 12px; font-weight: bold; border-left: 3px solid var(--gold); padding-left: 8px;">AFFECTATION DES TRAVAILLEURS</div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>⛏️ Fer</span><span id="txt-fer" style="color:var(--iron)">0%</span></div><div class="sub-gauge-track"><div id="gauge-fer" class="sub-gauge-fill" style="background: var(--iron); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🛢️ Pétrole</span><span id="txt-oil" style="color: #4a69bd">0%</span></div><div class="sub-gauge-track"><div id="gauge-oil" class="sub-gauge-fill" style="background: var(--oil); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="10" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🧱 Pierre</span><span id="txt-stone" style="color:var(--stone)">0%</span></div><div class="sub-gauge-track"><div id="gauge-stone" class="sub-gauge-fill" style="background: var(--stone); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌲 Forêt</span><span id="txt-wood" style="color:var(--wood)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wood" class="sub-gauge-fill" style="background: var(--wood); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="20" oninput="updateWorkerDistribution()"></div>
-                    <div class="sub-gauge-row"><div class="sub-gauge-label"><span>🌾 Blé</span><span id="txt-wheat" style="color:var(--wheat)">0%</span></div><div class="sub-gauge-track"><div id="gauge-wheat" class="sub-gauge-fill" style="background: var(--wheat); width: 0%;"></div></div><input type="range" class="prio-slider" min="0" max="100" value="30" oninput="updateWorkerDistribution()"></div>
-                    <!-- Stats Travailleurs mises à jour -->
-                    <div id="total-workers-display" style="font-size: 0.65em; color: #aaa; margin-top: 8px; text-align: right; border-top: 1px solid #333; padding-top: 4px;">Nombre de travailleurs: 70% (---)</div>
-                </div>
-            </div>
-
-            <div class="buildings-container">
-                <div style="font-size: 0.8em; color: var(--gold); margin-bottom: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">INFRASTRUCTURES & DÉVELOPPEMENT</div>
-                <div id="building-list"></div>
+        <div id="view-game" style="display:none; flex-direction:column; height:100%;">
+            <div class="panel-head">INFRASTRUCTURES</div>
+            <div id="build-list" class="scroll-area"></div>
+            <div style="padding:10px;">
+                <button class="btn-action" onclick="toggleTheme()">MODE VISUEL (Toggle)</button>
             </div>
         </div>
     </div>
-    <button id="toggle-btn" onclick="toggleMenu()">></button>
+
+    <div id="day-night-overlay"></div>
     <div id="map"></div>
 
-    <div id="resource-counter" style="display:none;">
-        <button id="toggle-rc-btn" onclick="toggleResourceCounter()">></button>
-        <div class="rc-header">ZONES D'EXTRACTION</div>
-        <div id="resource-counter-content"></div>
-    </div>
-</div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- DONNÉES COMPLÈTES DES BÂTIMENTS ---
+        const BUILDINGS = {
+            house: { name: "QUARTIER RESID.", desc: "+Population", cost: { money: 100, wood: 20 }, prod: { pop: 2 }, icon: "fa-house" },
+            quarry: { name: "CARRIÈRE", desc: "+Pierre", cost: { money: 300 }, prod: { stone: 5 }, icon: "fa-mound" },
+            sawmill: { name: "SCIERIE", desc: "+Bois", cost: { money: 300 }, prod: { wood: 5 }, icon: "fa-tree" },
+            mine: { name: "MINE DE FER", desc: "+Fer", cost: { money: 800, wood: 50 }, prod: { iron: 3 }, icon: "fa-hammer" },
+            oil: { name: "FOREUSE", desc: "+Pétrole", cost: { money: 1500, iron: 50 }, prod: { oil: 2 }, icon: "fa-oil-well" },
+            barracks: { name: "CASERNE", desc: "+Soldats", cost: { money: 1000, stone: 100, iron: 20 }, prod: { soldier: 1 }, icon: "fa-person-rifle" },
+            bank: { name: "CENTRE FINANCIER", desc: "+Argent", cost: { money: 2000, stone: 200, iron: 100 }, prod: { money: 200 }, icon: "fa-briefcase" },
+            nuke: { name: "SILO ICBM", desc: "+Dissuasion", cost: { money: 50000, iron: 2000, oil: 1000 }, prod: { nuke: 0.1 }, icon: "fa-radiation" }
+        };
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // --- VARIABLES GLOBALES ---
-    const map = L.map('map', { attributionControl: false, zoomControl: false, minZoom: 2, maxBounds: [[-90, -180], [90, 180]] }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
-
-    let hqLocked = false;
-    let selectedLayer = null;
-    let timeLeft = 15;
-    let currentArea = 0;
-    let gameTimeSeconds = 0;
-    let gameTimerInterval = null;
-    let currentWorkerPct = 70; 
-    let currentPopulationMillions = 0.5;
-    let resourceLayers = L.layerGroup().addTo(map);
-
-    const flagDisplay = document.getElementById('flag-emoji');
-    const countryDisplay = document.getElementById('country-name');
-
-    // --- DATA ---
-    // Correction des noms: "Forêt" pour bâtiment bois, "Brise-roche" pour pierre, "Puits de Pétrole"
-    let buildings = {
-        fer: { id:'fer', name: 'Site Minier', built: 0, level: 1, costBuild: 10000, costUp: 50000, baseProd: 2, reqPop: 7000000 },
-        oil: { id:'oil', name: 'Puits de Pétrole', built: 0, level: 1, costBuild: 25000, costUp: 100000, baseProd: 1, reqPop: 9000000 },
-        stone: { id:'stone', name: 'Brise-roche', built: 0, level: 1, costBuild: 5000, costUp: 20000, baseProd: 5, reqPop: 5000000 },
-        wood: { id:'wood', name: 'Forêt', built: 0, level: 1, costBuild: 2000, costUp: 10000, baseProd: 8, reqPop: 3000000 },
-        wheat: { id:'wheat', name: 'Ferme Agricole', built: 0, level: 1, costBuild: 1000, costUp: 5000, baseProd: 20, reqPop: 1000000 }
-    };
-    let globalZoneCounts = { fer: 0, oil: 0, stone: 0, wood: 0, wheat: 0 };
-
-    const flagMap = { "Afghanistan": "🇦🇫", "Albania": "🇦🇱", "Algeria": "🇩🇿", "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua and Barbuda": "🇦🇬", "Argentina": "🇦🇷", "Armenia": "🇦🇲", "Australia": "🇦🇺", "Austria": "🇦🇹", "Azerbaijan": "🇦🇿", "Bahamas": "🇧🇸", "Bahrain": "🇧🇭", "Bangladesh": "🇧🇩", "Barbados": "🇧🇧", "Belarus": "🇧🇾", "Belgium": "🇧🇪", "Belize": "🇧🇿", "Benin": "🇧🇯", "Bhutan": "🇧🇹", "Bolivia": "🇧🇴", "Bosnia and Herzegovina": "🇧🇦", "Botswana": "🇧🇼", "Brazil": "🇧🇷", "Brunei": "🇧🇳", "Bulgaria": "🇧🇬", "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮", "Cabo Verde": "🇨🇻", "Cambodia": "🇰🇭", "Cameroon": "🇨🇲", "Canada": "🇨🇦", "Central African Republic": "🇨🇫", "Chad": "🇹🇩", "Chile": "🇨🇱", "China": "🇨🇳", "Colombia": "🇨🇴", "Comoros": "🇰🇲", "Congo": "🇨🇬", "Costa Rica": "🇨🇷", "Croatia": "🇭🇷", "Cuba": "🇨🇺", "Cyprus": "🇨🇾", "Czech Republic": "🇨🇿", "Denmark": "🇩🇰", "Djibouti": "🇩ᴊ", "Dominica": "🇩🇲", "Dominican Republic": "🇩🇴", "East Timor": "🇹🇱", "Ecuador": "🇪🇨", "Egypt": "🇪🇬", "El Salvador": "🇸🇻", "Equatorial Guinea": "🇬🇶", "Eritrea": "🇪🇷", "Estonia": "🇪🇪", "Eswatini": "🇸🇿", "Ethiopia": "🇪🇹", "Fiji": "🇫🇯", "Finland": "🇫🇮", "France": "🇫🇷", "Gabon": "🇬🇦", "Gambia": "🇬🇲", "Georgia": "🇬🇪", "Germany": "🇩🇪", "Ghana": "🇬🇭", "Greece": "🇬🇷", "Grenada": "🇬🇩", "Guatemala": "🇬🇹", "Guinea": "🇬🇳", "Guinea-Bissau": "🇬🇼", "Guyana": "🇬🇾", "Haiti": "🇭🇹", "Honduras": "🇭🇳", "Hungary": "🇭🇺", "Iceland": "🇮🇸", "India": "🇮🇳", "Indonesia": "🇮🇩", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Ireland": "🇮🇪", "Israel": "🇮🇱", "Italy": "🇮🇹", "Ivory Coast": "🇨🇮", "Jamaica": "🇯🇲", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Kazakhstan": "🇰🇿", "Kenya": "🇰🇪", "Kiribati": "🇰🇮", "Kosovo": "🇽🇰", "Kuwait": "🇰🇼", "Kyrgyzstan": "🇰🇬", "Laos": "🇱🇦", "Latvia": "🇱🇻", "Lebanon": "🇱🇧", "Lesotho": "🇱🇸", "Liberia": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮", "Lithuania": "🇱🇹", "Luxembourg": "🇱🇺", "Madagascar": "🇲🇬", "Malawi": "🇲🇼", "Malaysia": "🇲🇾", "Maldives": "🇲🇻", "Mali": "🇲🇱", "Malta": "🇲🇹", "Marshall Islands": "🇲🇭", "Mauritania": "🇲🇷", "Mauritius": "🇲🇺", "Mexico": "🇲🇽", "Micronesia": "🇫🇲", "Moldova": "🇲🇩", "Monaco": "🇲🇨", "Mongolia": "🇲🇳", "Montenegro": "🇲🇪", "Morocco": "🇲🇦", "Mozambique": "🇲🇿", "Myanmar": "🇲🇲", "Namibia": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Nicaragua": "🇳🇮", "Niger": "🇳🇪", "Nigeria": "🇳🇬", "North Korea": "🇰🇵", "North Macedonia": "🇲🇰", "Norway": "🇳🇴", "Oman": "🇴🇲", "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Palestine": "🇵🇸", "Panama": "🇵🇦", "Papua New Guinea": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Philippines": "🇵🇭", "Poland": "🇵🇱", "Portugal": "🇵🇹", "Qatar": "🇶🇦", "Romania": "🇷🇴", "Russia": "🇷🇺", "Rwanda": "🇷🇼", "Saint Kitts and Nevis": "🇰🇳", "Saint Lucia": "🇱🇨", "Saint Vincent and the Grenadines": "🇻🇨", "Samoa": "🇼🇸", "San Marino": "🇸🇲", "Sao Tome and Principe": "🇸🇹", "Saudi Arabia": "🇸🇦", "Senegal": "🇸🇳", "Serbia": "🇷🇸", "Seychelles": "🇸🇨", "Sierra Leone": "🇸🇱", "Singapore": "🇸🇬", "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Solomon Islands": "🇸🇧", "Somalia": "🇸🇴", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "South Sudan": "🇸🇸", "Spain": "🇪🇸", "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Suriname": "🇸🇷", "Sweden": "🇸🇪", "Switzerland": "🇨🇭", "Syria": "🇸🇾", "Taiwan": "🇹🇼", "Tajikistan": "🇹🇯", "Tanzania": "🇹🇿", "Thailand": "🇹🇭", "Timor-Leste": "🇹🇱", "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad and Tobago": "🇹🇹", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "Turkmenistan": "🇹🇲", "Tuvalu": "🇹🇻", "Uganda": "🇺🇬", "Ukraine": "🇺🇦", "United Arab Emirates": "🇦🇪", "United Kingdom": "🇬🇧", "United States of America": "🇺🇸", "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿", "Vanuatu": "🇻🇺", "Vatican City": "🇻🇦", "Venezuela": "🇻🇪", "Vietnam": "🇻🇳", "Yemen": "🇾🇪", "Zambia": "🇿🇲", "Zimbabwe": "🇿🇼", "Somaliland": "🏴‍☠️", "Greenland": "🇬🇱", "Western Sahara": "🇪🇭", "Falkland Islands": "🇫🇰", "Antarctica": "🇦🇶" };
-    
-    const surfaceData = { "Russia": 17098242, "Canada": 9984670, "United States of America": 9833517, "China": 9596960, "Brazil": 8515767, "Australia": 7692024, "India": 3287263, "Argentina": 2780400, "Kazakhstan": 2724900, "Algeria": 2381741, "Democratic Republic of the Congo": 2344858, "Greenland": 2166086, "Saudi Arabia": 2149690, "Mexico": 1964375, "Indonesia": 1904569, "Sudan": 1861484, "Libya": 1759540, "Iran": 1648195, "Mongolia": 1564110, "Peru": 1285216, "Chad": 1284000, "Niger": 1267000, "Angola": 1246700, "Mali": 1240192, "South Africa": 1219090, "Colombia": 1141748, "Ethiopia": 1104300, "Bolivia": 1098581, "Mauritania": 1030700, "Egypt": 1002450, "Tanzania": 945087, "Nigeria": 923768, "Venezuela": 916445, "Pakistan": 881912, "Namibia": 825615, "Mozambique": 801590, "Turkey": 783562, "Chile": 756102, "Zambia": 752612, "Myanmar": 676578, "Afghanistan": 652230, "South Sudan": 644329, "France": 643801, "Somalia": 637657, "Central African Republic": 622984, "Ukraine": 603628, "Madagascar": 587041, "Botswana": 581730, "Kenya": 580367, "Yemen": 527968, "Thailand": 513120, "Spain": 505992, "Turkmenistan": 488100, "Cameroon": 475442, "Papua New Guinea": 462840, "Sweden": 450295, "Uzbekistan": 447400, "Morocco": 446550, "Iraq": 438317, "Paraguay": 406752, "Zimbabwe": 390757, "Norway": 385207, "Japan": 377975, "Germany": 357022, "Republic of the Congo": 342000, "Finland": 338424, "Vietnam": 331210, "Malaysia": 330803, "Ivory Coast": 322463, "Poland": 312696, "Oman": 309500, "Italy": 301340, "Philippines": 300000, "Ecuador": 283561, "Burkina Faso": 272967, "New Zealand": 268021, "Gabon": 267668, "Guinea": 245857, "United Kingdom": 242495, "Uganda": 241038, "Ghana": 238533, "Romania": 238391, "Laos": 236800, "Guyana": 214969, "Belarus": 207600, "Kyrgyzstan": 199951, "Senegal": 196722, "Syria": 185180, "Cambodia": 181035, "Somaliland": 176120, "Uruguay": 176215, "Suriname": 163820, "Tunisia": 163610, "Bangladesh": 147570, "Nepal": 147181, "Tajikistan": 143100, "Greece": 131957, "Nicaragua": 130373, "North Korea": 120538, "Malawi": 118484, "Eritrea": 117600, "Benin": 114763, "Honduras": 112492, "Liberia": 111369, "Bulgaria": 110879, "Cuba": 109884, "Guatemala": 108889, "Iceland": 103000, "South Korea": 100210, "Hungary": 93028, "Portugal": 92090, "Jordan": 89342, "Azerbaijan": 86600, "Austria": 83871, "United Arab Emirates": 83600, "Czech Republic": 78865, "Serbia": 77474, "Panama": 75417, "Sierra Leone": 71740, "Ireland": 70273, "Georgia": 69700, "Sri Lanka": 65610, "Lithuania": 65300, "Latvia": 64589, "Togo": 56785, "Croatia": 56594, "Bosnia and Herzegovina": 51197, "Costa Rica": 51100, "Slovakia": 49035, "Dominican Republic": 48671, "Estonia": 45227, "Denmark": 42933, "Netherlands": 41543, "Switzerland": 41284, "Bhutan": 38394, "Taiwan": 36193, "Guinea-Bissau": 36125, "Moldova": 33846, "Belgium": 30528, "Lesotho": 30355, "Armenia": 29743, "Solomon Islands": 28896, "Albania": 28748, "Equatorial Guinea": 28051, "Burundi": 27834, "Haiti": 27750, "Rwanda": 26338, "North Macedonia": 25713, "Djibouti": 23200, "Belize": 22966, "El Salvador": 21041, "Israel": 20770, "Slovenia": 20273, "Fiji": 18274, "Kuwait": 17818, "Eswatini": 17364, "East Timor": 14874, "Bahamas": 13943, "Montenegro": 13812, "Vanuatu": 12189, "Qatar": 11586, "Gambia": 11295, "Jamaica": 10991, "Lebanon": 10452, "Cyprus": 9251, "Baykonur Cosmodrome": 6717, "Palestine": 6020, "Brunei": 5765, "Trinidad and Tobago": 5130, "Cabo Verde": 4033, "Samoa": 2842, "Luxembourg": 2586, "Mauritius": 2040, "Comoros": 1862, "Sao Tome and Principe": 964, "Kiribati": 811, "Bahrain": 778, "Dominica": 751, "Tonga": 747, "Singapore": 728, "Micronesia": 702, "Saint Lucia": 616, "Andorra": 468, "Palau": 459, "Seychelles": 452, "Antigua and Barbuda": 442, "Barbados": 430, "Saint Vincent and the Grenadines": 389, "Grenada": 344, "Malta": 316, "Maldives": 300, "Saint Kitts and Nevis": 261, "Marshall Islands": 181, "Liechtenstein": 160, "San Marino": 61, "Tuvalu": 26, "Nauru": 21, "Monaco": 2, "Vatican City": 0.49 };
-    
-    // --- ICONES SVG ---
-    const svgIcons = {
-        fer: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="mtnGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cfd8dc"/><stop offset="100%" stop-color="#546e7a"/></linearGradient><linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient></defs><path d="M4 60 L16 35 L32 10 L48 35 L60 60 Z" fill="url(#mtnGrad)" stroke="#455a64" stroke-width="2"/><path d="M22 60 V38 A10 10 0 0 1 42 38 V60 Z" fill="#263238"/><path d="M20 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M44 60 V38" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M18 38 H46" stroke="url(#woodGrad)" stroke-width="5" stroke-linecap="round"/><path d="M26 60 L26 64 M38 60 L38 64" stroke="#212121" stroke-width="3"/><path d="M24 62 H40" stroke="#3e2723" stroke-width="3"/><circle cx="32" cy="18" r="4" fill="#eceff1" opacity="0.6"/><rect x="27" y="52" width="10" height="6" fill="#455a64" stroke="#000"/><circle cx="28" cy="60" r="2" fill="#000"/><circle cx="36" cy="60" r="2" fill="#000"/><rect x="28" y="53" width="8" height="3" fill="#b0bec5"/></svg>`,
-        oil: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#78909c"/><stop offset="100%" stop-color="#263238"/></linearGradient></defs><rect x="8" y="56" width="48" height="6" fill="#90a4ae" stroke="#37474f"/><path d="M24 56 L32 24 L40 56" fill="none" stroke="#263238" stroke-width="4"/><rect x="28" y="16" width="8" height="12" fill="url(#metalGrad)" stroke="#000"/><path d="M14 34 L54 22" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M54 22 L54 30" stroke="#c62828" stroke-width="5" stroke-linecap="round"/><path d="M8 34 Q4 38 8 46" stroke="#212121" stroke-width="3" fill="none"/><line x1="8" y1="46" x2="8" y2="56" stroke="#212121" stroke-width="3"/><circle cx="32" cy="24" r="3" fill="#fff" stroke="#000" stroke-width="2"/><path d="M48 56 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/><path d="M54 52 v-6 c0-1 2-2 4-2 s4 1 4 2 v6 c0 1-2 2-4 2 s-4-1-4-2 z" fill="#c0392b" stroke="#000" stroke-width="0.5"/></svg>`,
-        stone: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient></defs><path d="M2 60 L14 14 L50 14 L62 60 Z" fill="url(#groundGrad)"/><path d="M12 60 L20 28 L44 28 L52 60 Z" fill="#bcaaa4"/><path d="M22 60 L28 42 L36 42 L42 60 Z" fill="#8d6e63"/><circle cx="16" cy="54" r="4" fill="#6d4c41"/><circle cx="48" cy="52" r="5" fill="#5d4037"/><circle cx="50" cy="20" r="3" fill="#795548"/><path d="M4 60 H60" stroke="#3e2723" stroke-width="2"/><path d="M50 55 l2 -2 l3 1 l-1 3 z" fill="#7f8c8d"/><path d="M56 50 l3 -3 l2 2 l-2 2 z" fill="#95a5a6"/><line x1="50" y1="14" x2="50" y2="35" stroke="#212121" stroke-width="2"/><line x1="50" y1="14" x2="38" y2="28" stroke="#212121" stroke-width="2"/><rect x="35" y="28" width="6" height="4" fill="#f1c40f"/></svg>`,
-        wood: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><defs><linearGradient id="forestGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2e7d32"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient></defs><path d="M10 45 L20 20 L30 45 Z" fill="#1b5e20"/><path d="M34 45 L44 20 L54 45 Z" fill="#1b5e20"/><path d="M22 40 L32 15 L42 40 Z" fill="#2e7d32"/><path d="M4 55 L14 25 L24 55 Z" fill="#43a047"/><rect x="12" y="55" width="4" height="6" fill="#3e2723"/><path d="M40 55 L50 25 L60 55 Z" fill="#43a047"/><rect x="48" y="55" width="4" height="6" fill="#3e2723"/><path d="M20 58 L32 22 L44 58 Z" fill="#66bb6a"/><rect x="30" y="58" width="4" height="6" fill="#5d4037"/><circle cx="52" cy="58" r="3" fill="#d7ccc8" stroke="#5d4037"/><rect x="38" y="55" width="10" height="4" fill="#8d6e63" rx="2" transform="rotate(10 38 55)"/></svg>`,
-        wheat: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));"><rect x="2" y="30" width="60" height="30" fill="#f9a825" rx="4" /><path d="M4 30 Q10 40 16 30 T28 30 T40 30 T52 30 T64 30" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M4 40 Q10 50 16 40 T28 40 T40 40 T52 40 T64 40" stroke="#fbc02d" stroke-width="2" fill="none"/><path d="M10 30 V15" stroke="#f9a825" stroke-width="2"/><ellipse cx="10" cy="15" rx="3" ry="6" fill="#fdd835"/><path d="M25 35 V10" stroke="#f9a825" stroke-width="2"/><ellipse cx="25" cy="10" rx="4" ry="8" fill="#fdd835"/><path d="M40 32 V12" stroke="#f9a825" stroke-width="2"/><ellipse cx="40" cy="12" rx="4" ry="7" fill="#fdd835"/><rect x="48" y="32" width="14" height="10" fill="#c0392b"/><circle cx="50" cy="42" r="3" fill="#333"/><circle cx="60" cy="42" r="3" fill="#333"/><rect x="60" y="34" width="2" height="8" fill="#f1c40f"/></svg>`
-    };
-
-    // --- FONCTIONS LOGIQUES ---
-    window.updateMainRatio = function(val) {
-        const soldierPct = parseInt(val);
-        currentWorkerPct = 100 - soldierPct;
-        document.getElementById('soldiers-bar').style.width = soldierPct + "%";
-        document.getElementById('workers-bar').style.width = currentWorkerPct + "%";
-        document.getElementById('mobilization-text').innerText = "Mobilisation: " + soldierPct + "%";
-        window.updateWorkerDistribution();
-    };
-
-    function formatPopNumber(valMillions) {
-        if (valMillions < 1) { return Math.round(valMillions * 1000000).toLocaleString('fr-FR'); }
-        return valMillions.toFixed(1) + "M";
-    }
-
-    window.updateWorkerDistribution = function() {
-        const sliders = document.querySelectorAll('.prio-slider');
-        const weights = Array.from(sliders).map(s => parseInt(s.value));
-        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1; 
-        const totalWorkersAvailable = currentPopulationMillions * (currentWorkerPct / 100);
-        const resourceIds = ['fer', 'oil', 'stone', 'wood', 'wheat'];
-        weights.forEach((weight, index) => {
-            const id = resourceIds[index];
-            const relativePct = (weight / totalWeight); 
-            const displayPct = Math.round(relativePct * 100);
-            const workersForResource = totalWorkersAvailable * relativePct;
-            const workersFormatted = formatPopNumber(workersForResource);
-            document.getElementById(`gauge-${id}`).style.width = (relativePct * 100) + "%";
-            document.getElementById(`txt-${id}`).innerText = `${displayPct}% (${workersFormatted})`;
-        });
-        const totalDisplay = document.getElementById('total-workers-display');
-        if (totalDisplay) {
-            totalDisplay.innerText = `Nombre de travailleurs : ${currentWorkerPct}% (${formatPopNumber(totalWorkersAvailable)})`;
-        }
-    };
-
-    // --- TIMER PRE-JEU ---
-    window.gameTimer = setInterval(() => {
-        if (hqLocked) return;
-        timeLeft--;
-        const timerEl = document.getElementById('timer');
-        if(timerEl) timerEl.innerText = timeLeft;
-        if (timeLeft <= 0) { 
-            clearInterval(window.gameTimer); 
-            document.getElementById('game-over').style.display = 'flex'; 
-        }
-    }, 1000);
-
-    // --- FONCTIONS CARTE ---
-    function getFlagEmoji(isoCode, countryName) {
-        if (flagMap[countryName]) return flagMap[countryName];
-        if (isoCode && isoCode !== "-99" && isoCode.length === 2) {
-            const code = isoCode.toUpperCase();
-            return String.fromCodePoint(...[...code].map(c => c.charCodeAt(0) + 127397));
-        }
-        return "🌐"; 
-    }
-
-    // Fonction de calcul de surface simplifiée utilisant Turf si la donnée brute manque
-    function getArea(name, layer) {
-        if (surfaceData[name]) return surfaceData[name];
-        // Tentative de mapping manuel si le nom GeoJSON diffère de surfaceData
-        if (name === "United States of America") return surfaceData["United States of America"];
-        // Fallback géométrique via Leaflet bounds (très approximatif)
-        const bounds = layer.getBounds();
-        let width = Math.abs(bounds.getEast() - bounds.getWest());
-        const height = Math.abs(bounds.getNorth() - bounds.getSouth());
-        if (width > 200) width = 360 - width; 
-        return (width * 111) * (height * 111);
-    }
-
-    function calculateBudget(area) {
-        const minArea = 0.49; const maxArea = 17098242; const minBudget = 200000; const maxBudget = 5000000;   
-        const safeArea = Math.max(minArea, area);
-        // INVERSE: Plus c'est petit, plus on a d'argent (ratio 0 -> maxBudget)
-        const ratio = (Math.log(safeArea) - Math.log(minArea)) / (Math.log(maxArea) - Math.log(minArea));
-        let money = maxBudget - (ratio * (maxBudget - minBudget));
-        return Math.round(money / 1000) * 1000; 
-    }
-
-    function calculateResource(area, minRes, maxRes) {
-        const minArea = 0.49; const maxArea = 17098242;
-        const safeArea = Math.max(minArea, area);
-        // INVERSE: Plus c'est petit, plus on a de ressources de départ
-        const ratio = (Math.log(safeArea) - Math.log(minArea)) / (Math.log(maxArea) - Math.log(minArea));
-        let amount = maxRes - (ratio * (maxRes - minRes));
-        return Math.round(amount * 100) / 100;
-    }
-
-    // --- GENERATION DES ZONES ---
-    function generateResourceZones(layer, area) {
-        resourceLayers.clearLayers();
+        let state = {
+            playing: false, theme: 'tactical', time: 720,
+            res: { money: 0, pop: 0, soldier: 0, stone: 0, wood: 0, iron: 0, oil: 0, nuke: 0 },
+            buildings: [],
+            scaleFactor: 1 // Facteur de taille de la zone
+        };
         
-        // Logique inverse: Petit pays = PEU de zones, Grand pays = BEAUCOUP de zones
-        // MAIS attention au budget qui est inverse. Ici on veut que la carte soit remplie proportionnellement.
-        let numZones = Math.floor(10 + Math.pow(area, 0.18)); 
-        numZones = Math.max(10, Math.min(50, numZones));
+        let placementType = null;
+        let selectedLayer = null;
+        let geoJsonLayer;
 
-        globalZoneCounts = { fer: 0, oil: 0, stone: 0, wood: 0, wheat: 0 };
-        
-        // Noms dans le compteur en bas à droite
-        const displayBuildings = { fer: "Site Minier", oil: "Puits de Pétrole", stone: "Brise-roche", wood: "Forêt", wheat: "Ferme Agricole" };
-        const displayNames = { fer: "Mines", oil: "Puits", stone: "Carrières", wood: "Forêts", wheat: "Champs de Blé" };
-        const resourceColors = { fer: '#bdc3c7', oil: '#4a69bd', stone: '#95a5a6', wood: '#2ecc71', wheat: '#f1c40f' };
-        
-        const types = [ {id:'fer', icon: svgIcons.fer}, {id:'oil', icon: svgIcons.oil}, {id:'stone', icon: svgIcons.stone}, {id:'wood', icon: svgIcons.wood}, {id:'wheat', icon: svgIcons.wheat} ];
+        // INIT MAP
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+        const gameLayer = L.layerGroup().addTo(map);
 
-        const geoJson = layer.toGeoJSON();
-        const bbox = turf.bbox(geoJson);
-        let zonesCreated = 0, attempts = 0;
-        
-        while (zonesCreated < numZones && attempts < 20000) {
-            attempts++;
-            const randomPoint = turf.randomPoint(1, {bbox: bbox}).features[0];
-            if (turf.booleanPointInPolygon(randomPoint, geoJson)) {
-                let type = types[Math.floor(Math.random() * types.length)];
-                const lat = randomPoint.geometry.coordinates[1];
-                const lng = randomPoint.geometry.coordinates[0];
-                const radius = Math.sqrt((0.15 * area) / (numZones * Math.PI)) * 1000;
-                
-                const circle = L.circle([lat, lng], { color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.0, radius: radius, weight: 1, opacity: 0 }).addTo(resourceLayers);
-                const icon = L.divIcon({ className: 'resource-icon', html: `<div style="width:56px; height:56px;">${type.icon}</div>`, iconSize: [56, 56], iconAnchor: [28, 28] });
-                const marker = L.marker([lat, lng], { icon: icon }).addTo(resourceLayers);
-                
-                marker.on('mouseover', () => circle.setStyle({ fillOpacity: 0.4, opacity: 0.8 }));
-                marker.on('mouseout', () => circle.setStyle({ fillOpacity: 0.0, opacity: 0 }));
-                
-                globalZoneCounts[type.id]++;
-                zonesCreated++;
-            }
-        }
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(r => r.json())
+            .then(data => {
+                geoJsonLayer = L.geoJSON(data, {
+                    style: { className: 'country-poly' },
+                    onEachFeature: onFeature
+                }).addTo(map);
+                populateList(data.features);
+                document.getElementById('loader').style.display = 'none';
+            });
 
-        // --- UI COMPTEUR ---
-        const container = document.getElementById('resource-counter-content');
-        container.innerHTML = "";
-        ['fer', 'oil', 'stone', 'wood', 'wheat'].forEach(key => {
-            const count = globalZoneCounts[key];
-            const color = resourceColors[key];
-            // Correspondance correcte des noms demandés
-            const itemHTML = `
-                <div class="rc-item">
-                    <div class="rc-main-row">
-                        <span class="rc-label" style="color: ${color}">
-                            <span class="rc-icon" style="width:24px; height:24px; display:inline-block;">${svgIcons[key]}</span> 
-                            ${displayNames[key]}
-                        </span> 
-                        <span class="rc-val">${count}</span>
-                    </div>
-                    <div class="rc-sub-row" style="color: ${color}; filter: brightness(0.8);">
-                        ${displayBuildings[key]} (Niv. 1) : <span style="color:#fff">0</span>
-                    </div>
-                </div>`;
-            container.innerHTML += itemHTML;
-        });
-        container.innerHTML += `<div class="rc-total">Total Zones: <span id="count-total">${zonesCreated}</span></div>`;
-        const rc = document.getElementById('resource-counter');
-        rc.style.display = 'block';
-        rc.classList.remove('closed');
-        document.getElementById('toggle-rc-btn').innerText = ">";
-
-        renderBuildingMenu();
-    }
-
-    function renderBuildingMenu() {
-        const listContainer = document.getElementById('building-list');
-        listContainer.innerHTML = '';
-        ['fer', 'oil', 'stone', 'wood', 'wheat'].forEach(key => {
-            const b = buildings[key];
-            const max = globalZoneCounts[key];
-            const unitGain = b.baseProd * b.level;
-            const totalGain = unitGain * b.built;
-            const card = document.createElement('div');
-            card.className = 'b-card';
-            card.innerHTML = `
-                <div class="b-header">
-                    <div class="b-icon" style="width:32px; height:32px;">${svgIcons[key]}</div>
-                    <div class="b-title">${b.name}</div>
-                    <div class="b-level">Niv. ${b.level}/5</div>
-                </div>
-                <div class="b-stats">
-                    <div class="b-stats-row"><span>Bâtis: <span class="b-val">${b.built}</span> / ${max}</span><span>Gain: <span class="b-val">+${unitGain} T/h</span> / bât.</span></div>
-                    <div class="b-stats-row"><span>Total: <span class="b-total-gain">+${totalGain} T/h</span></span></div>
-                </div>
-                <div class="b-actions">
-                    <button class="b-btn btn-build" onclick="buildBuilding('${key}')">Construire (${b.costBuild}$)</button>
-                    <button class="b-btn btn-upg" onclick="upgradeBuilding('${key}')">Améliorer (${b.costUp}$)</button>
-                </div>
-                <div class="b-req">Population requise: ${(b.reqPop/1000000).toFixed(1)}M</div>`;
-            listContainer.appendChild(card);
-        });
-    }
-
-    // --- FONCTIONS GLOBAL (window) ---
-    window.buildBuilding = function(type) {
-        const b = buildings[type];
-        if (b.built < globalZoneCounts[type]) {
-            b.built++;
-            renderBuildingMenu();
-            // MAJ Panneau Droite
-            const items = document.querySelectorAll('.rc-item');
-            const targetIndex = ['fer', 'oil', 'stone', 'wood', 'wheat'].indexOf(type);
-            if(items[targetIndex]) {
-                 const subRow = items[targetIndex].querySelector('.rc-sub-row span');
-                 if(subRow) subRow.innerText = b.built;
-            }
-        } else { alert("Maximum de zones exploitées pour ce type !"); }
-    };
-
-    window.upgradeBuilding = function(type) {
-        const b = buildings[type];
-        if (b.level < 5) {
-            b.level++; b.costUp *= 2; renderBuildingMenu();
-        } else { alert("Niveau Max atteint !"); }
-    };
-
-    window.toggleResourceCounter = function() {
-        const rc = document.getElementById('resource-counter');
-        const btn = document.getElementById('toggle-rc-btn');
-        rc.classList.toggle('closed');
-        btn.innerText = rc.classList.contains('closed') ? "<" : ">";
-    };
-
-    window.lockHQ = function() {
-        if (!selectedLayer) return;
-        hqLocked = true;
-        selectedLayer.setStyle({ fillColor: 'transparent', color: '#00d4ff', weight: 3, fillOpacity: 0 });
-        generateResourceZones(selectedLayer, currentArea);
-        document.getElementById('side-menu').classList.add('active');
-        document.getElementById('toggle-btn').style.display = 'block';
-        document.getElementById('toggle-btn').style.left = "360px";
-        const areaStr = currentArea.toLocaleString('fr-FR');
-        document.getElementById('hq-name').innerText = "QG : " + countryDisplay.innerText + " (" + areaStr + " km²)";
-        document.getElementById('action-zone').innerHTML = `<div id="game-timer">00:00</div>`;
-        document.getElementById('countdown-container').style.display = 'none';
-        if (window.gameTimer) clearInterval(window.gameTimer);
-        window.gameTimerInterval = setInterval(() => {
-            gameTimeSeconds++;
-            const m = Math.floor(gameTimeSeconds / 60).toString().padStart(2, '0');
-            const s = (gameTimeSeconds % 60).toString().padStart(2, '0');
-            const gtEl = document.getElementById('game-timer');
-            if(gtEl) gtEl.innerText = `${m}:${s}`;
-        }, 1000);
-        map.fitBounds(selectedLayer.getBounds(), { padding: [50, 50] });
-    };
-
-    window.toggleMenu = function() {
-        const menu = document.getElementById('side-menu');
-        const btn = document.getElementById('toggle-btn');
-        const isOpen = menu.classList.toggle('active');
-        btn.innerText = isOpen ? "<" : ">";
-        btn.style.left = isOpen ? "360px" : "0";
-    };
-
-    // Chargement GeoJSON
-    fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
-    .then(r => r.json())
-    .then(data => {
-        L.geoJson(data, {
-            style: { fillColor: '#222', fillOpacity: 0.7, color: '#444', weight: 1 },
-            onEachFeature: (feature, layer) => {
-                layer.on('mouseover', function() {
-                    if(hqLocked) return;
-                    this.setStyle({ fillOpacity: 0.9, fillColor: '#444', color: '#00d4ff' });
-                    const props = feature.properties;
-                    const name = props.ADMIN || props.name || "Inconnu";
-                    const iso = props.ISO_A2 || props.iso_a2 || "";
-                    countryDisplay.innerText = name.toUpperCase();
-                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
-                });
-                layer.on('mouseout', function() {
-                    if (this !== selectedLayer) { this.setStyle({ fillOpacity: 0.7, fillColor: '#222', color: '#444' }); }
-                    if(hqLocked) return;
-                    if (selectedLayer) {
-                        const p = selectedLayer.feature.properties;
-                        const name = p.ADMIN || p.name;
-                        const iso = p.ISO_A2 || p.iso_a2 || "";
-                        countryDisplay.innerText = name.toUpperCase();
-                        flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
-                    } else {
-                        countryDisplay.innerText = "SÉLECTIONNEZ UNE ZONE";
-                        flagDisplay.innerText = "🌐";
+        function onFeature(feature, layer) {
+            layer.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                if(placementType) {
+                    // Empêcher la construction hors du pays sélectionné
+                    if(feature.id !== state.selectedId) {
+                        alert("Violation de frontière ! Vous ne pouvez construire que sur votre territoire.");
+                        return;
                     }
-                });
-                layer.on('click', function() {
-                    if(hqLocked) return;
-                    if(selectedLayer) selectedLayer.setStyle({ fillColor: '#222', weight: 1, color: '#444' });
-                    selectedLayer = this;
-                    this.setStyle({ fillColor: '#333', weight: 2, color: '#00d4ff' });
-                    
-                    const p = feature.properties;
-                    const name = p.ADMIN || p.name;
-                    const iso = p.ISO_A2 || p.iso_a2 || "";
-                    countryDisplay.innerText = name.toUpperCase();
-                    flagDisplay.innerText = getFlagEmoji(iso.trim(), name);
+                    buildAt(e.latlng);
+                } else if(!state.playing) {
+                    selectCountry(feature, layer);
+                }
+            });
+        }
 
-                    currentArea = getArea(name, layer);
+        // --- SELECTION INTELLIGENTE (TAILLE & ÉCONOMIE) ---
+        function selectCountry(feature, layer) {
+            if(selectedLayer && selectedLayer._path) selectedLayer._path.classList.remove('active-country');
+            selectedLayer = layer;
+            if(selectedLayer._path) selectedLayer._path.classList.add('active-country');
+            state.selectedId = feature.id;
 
-                    let basePop = 0.5; let resMultiplier = 1.0; let calculatedPop = 0.5;
-                    if (currentArea < 800) { resMultiplier = 6.0; calculatedPop = basePop * 7.0; } 
-                    else if (currentArea < 2100) { resMultiplier = 5.0; calculatedPop = basePop * 4.0; } 
-                    else if (currentArea < 23000) { resMultiplier = 3.0; calculatedPop = basePop * 2.0; } 
-                    else if (currentArea < 94000) { resMultiplier = 2.0; calculatedPop = basePop * 1.4; } 
-                    else { resMultiplier = 1.0; calculatedPop = basePop; }
+            // 1. CALCUL DE LA TAILLE GÉOGRAPHIQUE
+            const b = layer.getBounds();
+            const width = b.getEast() - b.getWest();
+            const height = b.getNorth() - b.getSouth();
+            const area = width * height; 
 
-                    currentPopulationMillions = calculatedPop;
-                    document.getElementById('pop-total').innerText = "Pop: " + formatPopNumber(calculatedPop);
-                    window.updateWorkerDistribution(); 
-
-                    const budget = calculateBudget(currentArea);
-                    document.getElementById('money-val').innerText = budget.toLocaleString('en-US').replace(/,/g, ' ') + " $";
-
-                    const capMax = 1000; 
-
-                    let valFer = calculateResource(currentArea, 0.5, 8.0) * resMultiplier;
-                    document.getElementById('val-fer').innerText = valFer.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-fer').style.width = Math.min(100, (valFer / capMax * 100)) + "%";
-
-                    let valOil = calculateResource(currentArea, 0.2, 4.0) * resMultiplier;
-                    document.getElementById('val-oil').innerText = valOil.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-oil').style.width = Math.min(100, (valOil / capMax * 100)) + "%";
-
-                    let valStone = calculateResource(currentArea, 1.2, 12.0) * resMultiplier;
-                    document.getElementById('val-stone').innerText = valStone.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-stone').style.width = Math.min(100, (valStone / capMax * 100)) + "%";
-
-                    let valWood = calculateResource(currentArea, 2.0, 15.0) * resMultiplier;
-                    document.getElementById('val-wood').innerText = valWood.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wood').style.width = Math.min(100, (valWood / capMax * 100)) + "%";
-
-                    let valWheat = calculateResource(currentArea, 10.0, 28.0) * resMultiplier;
-                    document.getElementById('val-wheat').innerText = valWheat.toFixed(2).replace('.', ',') + " T";
-                    document.getElementById('stock-wheat').style.width = Math.min(100, (valWheat / capMax * 100)) + "%";
-
-                    document.getElementById('action-zone').innerHTML = `
-                        <button id="btn-hq" onclick="lockHQ()">ÉTABLIR QG</button>`;
-                });
+            // 2. LOGIQUE ÉCONOMIQUE INVERSÉE (Petit = Riche, Grand = Pauvre)
+            let desc = "";
+            if (area < 5) {
+                state.res.money = 50000; state.res.pop = 2; // Riche paradis fiscal
+                desc = "TYPE: MICRO-ETAT (Budget Illimité)";
+                state.scaleFactor = 0.5; // Petites zones
+            } else if (area > 50) {
+                state.res.money = 2000; state.res.pop = 150; // Géant pauvre
+                desc = "TYPE: SUPERPUISSANCE (Gestion de Masse)";
+                state.scaleFactor = 4.0; // Zones GIGANTESQUES
+            } else {
+                state.res.money = 8000; state.res.pop = 30; // Standard
+                desc = "TYPE: NATION STANDARD";
+                state.scaleFactor = 1.5; // Zones normales
             }
-        }).addTo(map);
-    }).catch(e => console.error("Erreur GeoJSON:", e));
 
-    window.updateMainRatio(30);
-});
-</script>
+            // Ressources de départ de base
+            state.res.wood = 200; state.res.stone = 200; state.res.iron = 50; state.res.oil = 0; state.res.soldier = 0;
+
+            document.getElementById('sel-name').innerText = feature.properties.name;
+            document.getElementById('sel-desc').innerText = desc + ` | FACTEUR ZONE: x${state.scaleFactor}`;
+            document.getElementById('btn-start').disabled = false;
+
+            // Mise en évidence liste
+            document.querySelectorAll('.list-item').forEach(l => l.classList.remove('active'));
+            const li = document.getElementById('li-' + feature.id);
+            if(li) { li.classList.add('active'); li.scrollIntoView({block:'center'}); }
+        }
+
+        function populateList(features) {
+            const list = document.getElementById('country-list');
+            features.sort((a,b) => a.properties.name.localeCompare(b.properties.name));
+            features.forEach(f => {
+                const d = document.createElement('div'); d.className = 'list-item'; d.id = 'li-'+f.id;
+                d.innerText = f.properties.name;
+                d.onclick = () => {
+                   const l = geoJsonLayer.getLayers().find(lay => lay.feature.id === f.id);
+                   if(l) l.fireEvent('click');
+                };
+                list.appendChild(d);
+            });
+        }
+
+        // --- BOUCLE DE JEU ---
+        function startGame() {
+            state.playing = true;
+            document.getElementById('view-select').style.display = 'none';
+            document.getElementById('view-game').style.display = 'flex';
+            map.fitBounds(selectedLayer.getBounds());
+            initBuildMenu();
+            updateHUD();
+            setInterval(gameLoop, 1000);
+        }
+
+        function gameLoop() {
+            // Production
+            state.res.money += Math.floor(state.res.pop / 2); // Taxes
+            state.buildings.forEach(b => {
+                const p = BUILDINGS[b.type].prod;
+                for(let k in p) state.res[k] += p[k] * b.level;
+            });
+            
+            // Temps & Nuit
+            state.time += 10; if(state.time >= 1440) state.time = 0;
+            const h = Math.floor(state.time/60);
+            document.getElementById('clock').innerText = `${h.toString().padStart(2,'0')}:${(state.time%60).toString().padStart(2,'0')}`;
+            
+            let op = 0;
+            if(h >= 20 || h < 6) op = 0.8; 
+            else if(h>=18) op = 0.3;
+            document.getElementById('day-night-overlay').style.opacity = op;
+
+            updateHUD();
+        }
+
+        // --- CONSTRUCTION ---
+        function initBuildMenu() {
+            const list = document.getElementById('build-list');
+            for(let key in BUILDINGS) {
+                const b = BUILDINGS[key];
+                let costStr = "";
+                for(let c in b.cost) costStr += `<span>${c}: ${b.cost[c]}</span>`;
+
+                const d = document.createElement('div');
+                d.className = 'build-card';
+                d.innerHTML = `
+                    <div class="build-info"><span>${b.name}</span> <i class="fas ${b.icon}"></i></div>
+                    <div class="build-desc">${b.desc}</div>
+                    <div class="build-cost">${costStr}</div>
+                    <button class="btn-action" onclick="setPlace('${key}')">CONSTRUIRE</button>
+                `;
+                list.appendChild(d);
+            }
+        }
+
+        window.setPlace = function(type) {
+            const cost = BUILDINGS[type].cost;
+            for(let k in cost) if(state.res[k] < cost[k]) { alert("Ressources manquantes: " + k); return; }
+            placementType = type;
+            document.getElementById('map').classList.add('crosshair');
+        };
+
+        function buildAt(latlng) {
+            const type = placementType;
+            const cost = BUILDINGS[type].cost;
+            for(let k in cost) state.res[k] -= cost[k];
+
+            const level = 1;
+            // --- ZONE PROPORTIONNELLE ---
+            // Base radius (50km) * Facteur Pays * Niveau
+            const baseRadius = 50000; 
+            const radius = baseRadius * state.scaleFactor * level;
+
+            const circle = L.circle(latlng, { radius: radius, color: 'var(--text-main)', fillOpacity: 0.1, weight: 1, dashArray:'4,4' }).addTo(gameLayer);
+            const icon = L.divIcon({
+                className: 'leaflet-div-icon',
+                html: `<div class="token"><i class="fas ${BUILDINGS[type].icon}"></i></div>`,
+                iconSize: [24,24]
+            });
+            const marker = L.marker(latlng, {icon:icon}).addTo(gameLayer);
+
+            // Click pour upgrade
+            marker.on('click', () => {
+                if(confirm("Améliorer ce bâtiment ? Coût doublé.")) {
+                    // (Simplification ici pour l'upgrade : on double juste le niveau visuel)
+                    circle.setRadius(circle.getRadius() * 1.5);
+                    marker.setIcon(L.divIcon({
+                        className: 'leaflet-div-icon',
+                        html: `<div class="token" style="border-width:3px; font-size:16px;"><i class="fas ${BUILDINGS[type].icon}"></i></div>`,
+                        iconSize: [34,34]
+                    }));
+                }
+            });
+
+            state.buildings.push({ type, level, marker, circle });
+            placementType = null;
+            document.getElementById('map').classList.remove('crosshair');
+            updateHUD();
+        }
+
+        function updateHUD() {
+            const keys = ['money','pop','soldier','stone','wood','iron','oil','nuke'];
+            keys.forEach(k => {
+                const el = document.getElementById('r-'+k);
+                if(el) el.innerText = Math.floor(state.res[k]).toLocaleString();
+            });
+        }
+
+        window.toggleTheme = function() {
+            if(state.theme === 'tactical') {
+                document.body.setAttribute('data-theme', 'cyber'); state.theme = 'cyber';
+            } else {
+                document.body.removeAttribute('data-theme'); state.theme = 'tactical';
+            }
+        }
+    </script>
 </body>
 </html>
